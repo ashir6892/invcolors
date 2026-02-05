@@ -16,6 +16,7 @@ import android.widget.Toast;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.io.File;
 
 public class MainActivity extends Activity {
 
@@ -109,7 +110,18 @@ public class MainActivity extends Activity {
 
     private void loadHookedApps() {
         appsListLayout.removeAllViews();
-        hookedApps = prefs.getStringSet("hooked_apps", new HashSet<>());
+        hookedApps = new HashSet<>();
+        
+        // Read hooked apps from file system
+        File hookedAppsDir = new File("/data/data/com.invcolors/hooked_apps/");
+        if (hookedAppsDir.exists() && hookedAppsDir.isDirectory()) {
+            File[] files = hookedAppsDir.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    hookedApps.add(file.getName());
+                }
+            }
+        }
 
         if (hookedApps.isEmpty()) {
             TextView emptyView = new TextView(this);
