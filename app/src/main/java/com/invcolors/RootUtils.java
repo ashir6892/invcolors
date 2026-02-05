@@ -198,7 +198,8 @@ public class RootUtils {
     }
 
     /**
-     * Extract colors from an APK's resources.arsc
+     * Extract colors from an APK's resources
+     * Uses multiple methods since aapt may not be available
      */
     public static List<Integer> extractColorsFromApk(String packageName) {
         List<Integer> colors = new ArrayList<>();
@@ -206,50 +207,72 @@ public class RootUtils {
         String apkPath = getApkPath(packageName);
         if (apkPath == null) return colors;
         
-        // Use aapt to dump colors from APK
-        // First try to find color resources
-        String colorDump = executeRoot("aapt dump resources " + apkPath + " 2>/dev/null | grep -E 'color|Color' | head -50");
+        // Method 1: Use unzip to extract resources.arsc and parse it
+        String tempDir = "/data/local/tmp/invcolors_" + System.currentTimeMillis();
+        executeRoot("mkdir -p " + tempDir);
         
-        // Parse hex color values
-        if (!colorDump.isEmpty()) {
-            String[] lines = colorDump.split("\n");
-            for (String line : lines) {
-                // Look for hex color patterns like #RRGGBB or #AARRGGBB
-                if (line.contains("#")) {
-                    int idx = line.indexOf("#");
-                    if (idx >= 0 && idx + 7 <= line.length()) {
-                        try {
-                            String hexPart = line.substring(idx + 1);
-                            // Extract 6 or 8 hex digits
-                            StringBuilder hex = new StringBuilder();
-                            for (char c : hexPart.toCharArray()) {
-                                if (Character.isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
-                                    hex.append(c);
-                                    if (hex.length() >= 8) break;
-                                } else {
-                                    break;
+        try {
+            // Try to extract and search for color hex patterns
+            // Method A: Search in manifest and resource files using strings
+            String stringsOutput = executeRoot("strings " + apkPath + " 2>/dev/null | grep -oE '#[0-9A-Fa-f]{6,8}' | head -30");
+            parseHexColors(stringsOutput, colors);
+            
+            // Method B: Unzip and grep for colors in XML
+            if (colors.size() < 5) {
+                executeRoot("cd " + tempDir + " && unzip -q -o " + apkPath + " 'res/values/colors.xml' 2>/dev/null");
+                String colorsXml = executeRoot("cat " + tempDir + "/res/values/colors.xml 2>/dev/null");
+                parseHexColors(colorsXml, colors);
+            }
+            
+            // Method C: Search for color patterns in any XML
+            if (colors.size() < 5) {
+                executeRoot("cd " + tempDir + " && unzip -q -o " + apkPath + " 'res/values/*.xml' 2>/dev/null");
+                String allXml = executeRoot("grep -roh '#[0-9A-Fa-f]\\{6,8\\}' " + tempDir + "/res/ 2>/dev/null | head -30");
+                parseHexColors(allXml, colors);
+            }
+            
+            // Method D: Extract colors from styles
+            if (colors.size() < 5) {
+                executeRoot("cd " + tempDir + " && unzip -q -o " + apkPath + " 'res/values/styles.xml' 2>/dev/null");
+                String stylesXml = executeRoot("cat " + tempDir + "/res/values/styles.xml 2>/dev/null");
+                parseHexColors(stylesXml, colors);
+            }
+            
+            // Method E: Binary grep on APK for color patterns (last resort)
+            if (colors.size() < 3) {
+                String hexDump = executeRoot("xxd " + apkPath + " 2>/dev/null | grep -oE '[0-9a-f]{8}' | head -100");
+                // Only add common color-like patterns
+                if (!hexDump.isEmpty()) {
+                    for (String hex : hexDump.split("\\s+")) {
+                        hex = hex.trim();
+                        if (hex.length() == 8) {
+                            try {
+                                int val = (int) Long.parseLong(hex, 16);
+                                // Only add if it looks like a color (high alpha)
+                                int alpha = (val >> 24) & 0xFF;
+                                if (alpha > 200 && !colors.contains(val) && colors.size() < 20) {
+                                    colors.add(val);
                                 }
-                            }
-                            
-                            if (hex.length() >= 6) {
-                                int color;
-                                if (hex.length() == 6) {
-                                    color = 0xFF000000 | Integer.parseInt(hex.toString(), 16);
-                                } else {
-                                    color = (int) Long.parseLong(hex.toString(), 16);
-                                }
-                                
-                                // Add if not already present
-                                if (!colors.contains(color)) {
-                                    colors.add(color);
-                                }
-                            }
-                        } catch (NumberFormatException e) {
-                            // Skip invalid colors
+                            } catch (Exception e) {}
                         }
                     }
                 }
             }
+            
+        } finally {
+            // Cleanup
+            executeRoot("rm -rf " + tempDir);
+        }
+        
+        // Add common colors if none found
+        if (colors.isEmpty()) {
+            // Add some common colors as suggestions
+            colors.add(0xFFFFFFFF); // White
+            colors.add(0xFF000000); // Black
+            colors.add(0xFFF5F5F5); // Light gray
+            colors.add(0xFF212121); // Dark gray
+            colors.add(0xFF1976D2); // Blue
+            colors.add(0xFFD32F2F); // Red
         }
         
         // Limit to 20 colors
@@ -258,6 +281,50 @@ public class RootUtils {
         }
         
         return colors;
+    }
+    
+    /**
+     * Parse hex color values from text
+     */
+    private static void parseHexColors(String text, List<Integer> colors) {
+        if (text == null || text.isEmpty()) return;
+        
+        String[] lines = text.split("\\n");
+        for (String line : lines) {
+            int idx = line.indexOf("#");
+            while (idx >= 0 && idx + 4 < line.length()) {
+                try {
+                    StringBuilder hex = new StringBuilder();
+                    for (int i = idx + 1; i < line.length() && hex.length() < 8; i++) {
+                        char c = line.charAt(i);
+                        if (Character.isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+                            hex.append(c);
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    if (hex.length() >= 6) {
+                        int color;
+                        if (hex.length() == 6) {
+                            color = 0xFF000000 | Integer.parseInt(hex.toString(), 16);
+                        } else if (hex.length() == 8) {
+                            color = (int) Long.parseLong(hex.toString(), 16);
+                        } else {
+                            color = 0xFF000000 | Integer.parseInt(hex.substring(0, 6), 16);
+                        }
+                        
+                        if (!colors.contains(color) && colors.size() < 25) {
+                            colors.add(color);
+                        }
+                    }
+                } catch (NumberFormatException e) {
+                    // Skip invalid
+                }
+                
+                idx = line.indexOf("#", idx + 1);
+            }
+        }
     }
 
     /**
