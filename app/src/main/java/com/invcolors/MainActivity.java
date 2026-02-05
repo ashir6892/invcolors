@@ -147,26 +147,46 @@ public class MainActivity extends Activity {
         Executors.newSingleThreadExecutor().execute(() -> {
             List<AppInfo> apps = new ArrayList<>();
             
-            // Get all installed apps with launcher icons
+            List<AppInfo> apps = new ArrayList<>();
+            Set<String> addedPackages = new HashSet<>();
+            
+            // 1. Get apps using Root (su) - Critical for bypassing BetterKnownInstalled
+            if (RootUtils.isRootAvailable()) {
+                List<RootUtils.AppData> rootApps = RootUtils.getInstalledAppsWithRoot();
+                for (RootUtils.AppData app : rootApps) {
+                    if (!addedPackages.contains(app.packageName)) {
+                        String name = app.appName;
+                        // Try to get better label from PM even if list hidden
+                        try {
+                            ApplicationInfo info = packageManager.getApplicationInfo(app.packageName, 0);
+                            name = info.loadLabel(packageManager).toString();
+                        } catch (Exception e) {
+                            // Keep package name/folder name if PM lookup fails
+                        }
+                        
+                        boolean isPinned = pinnedApps.contains(app.packageName);
+                        apps.add(new AppInfo(app.packageName, name, isPinned));
+                        addedPackages.add(app.packageName);
+                    }
+                }
+            }
+            
+            // 2. Get apps using PackageManager (for standard apps + better labels)
             try {
                 List<ApplicationInfo> installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA);
                 for (ApplicationInfo app : installedApps) {
                     Intent launchIntent = packageManager.getLaunchIntentForPackage(app.packageName);
                     if (launchIntent != null) {
-                        String appName = app.loadLabel(packageManager).toString();
-                        boolean isPinned = pinnedApps.contains(app.packageName);
-                        apps.add(new AppInfo(app.packageName, appName, isPinned));
+                        if (!addedPackages.contains(app.packageName)) {
+                             String appName = app.loadLabel(packageManager).toString();
+                             boolean isPinned = pinnedApps.contains(app.packageName);
+                             apps.add(new AppInfo(app.packageName, appName, isPinned));
+                             addedPackages.add(app.packageName);
+                        }
                     }
                 }
             } catch (Exception e) {
-                // Fallback to root if PackageManager fails
-                if (RootUtils.isRootAvailable()) {
-                    List<RootUtils.AppData> rootApps = RootUtils.getInstalledAppsWithRoot();
-                    for (RootUtils.AppData app : rootApps) {
-                        boolean isPinned = pinnedApps.contains(app.packageName);
-                        apps.add(new AppInfo(app.packageName, app.appName, isPinned));
-                    }
-                }
+                // Ignore PM errors if root worked
             }
             
             // Sort: pinned first, then alphabetically
