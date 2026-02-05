@@ -27,7 +27,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        prefs = getSharedPreferences("invcolors_settings", Context.MODE_WORLD_READABLE);
+        prefs = getSharedPreferences("invcolors_settings", Context.MODE_PRIVATE);
         hookedApps = prefs.getStringSet("hooked_apps", new HashSet<>());
 
         // Main layout

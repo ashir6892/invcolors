@@ -27,7 +27,7 @@ public class ColorSettingsActivity extends Activity {
         super.onCreate(savedInstanceState);
         
         packageName = getIntent().getStringExtra("package_name");
-        prefs = getSharedPreferences("invcolors_settings", Context.MODE_WORLD_READABLE);
+        prefs = getSharedPreferences("invcolors_settings", Context.MODE_PRIVATE);
         
         // Load saved colors
         sourceColor = prefs.getInt(packageName + "_source", Color.WHITE);

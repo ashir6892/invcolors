@@ -16,9 +16,6 @@ import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
-import java.util.HashSet;
-import java.util.Set;
-
 public class MainHook implements IXposedHookLoadPackage {
 
     private static final String TAG = "InvColors";
@@ -35,30 +32,16 @@ public class MainHook implements IXposedHookLoadPackage {
         XposedBridge.log(TAG + ": ========================================");
         XposedBridge.log(TAG + ": Loading for package: " + lpparam.packageName);
         
-        // Register this app as hooked
+        // Use default white->black transformation for now
+        // (Custom colors will be loaded from the module's own SharedPreferences later)
+        int sourceColor = Color.WHITE;
+        int targetColor = Color.BLACK;
+        
+        XposedBridge.log(TAG + ": Applying WHITE->BLACK dark mode");
+        
+        ColorMatrixColorFilter filter = createCustomColorFilter(sourceColor, targetColor);
+        
         try {
-            Context context = (Context) XposedHelpers.callMethod(
-                XposedHelpers.callStaticMethod(
-                    XposedHelpers.findClass("android.app.ActivityThread", lpparam.classLoader),
-                    "currentActivityThread"
-                ),
-                "getSystemContext"
-            );
-            
-            SharedPreferences prefs = context.getSharedPreferences("invcolors_settings", Context.MODE_WORLD_READABLE | Context.MODE_WORLD_WRITEABLE);
-            Set<String> hookedApps = new HashSet<>(prefs.getStringSet("hooked_apps", new HashSet<>()));
-            hookedApps.add(lpparam.packageName);
-            prefs.edit().putStringSet("hooked_apps", hookedApps).apply();
-            
-            // Load custom colors
-            int sourceColor = prefs.getInt(lpparam.packageName + "_source", Color.WHITE);
-            int targetColor = prefs.getInt(lpparam.packageName + "_target", Color.BLACK);
-            
-            XposedBridge.log(TAG + ": Source color: " + Integer.toHexString(sourceColor));
-            XposedBridge.log(TAG + ": Target color: " + Integer.toHexString(targetColor));
-            
-            ColorMatrixColorFilter filter = createCustomColorFilter(sourceColor, targetColor);
-            
             // Hook ViewGroup.dispatchDraw()
             XposedHelpers.findAndHookMethod(
                 ViewGroup.class,
@@ -75,7 +58,7 @@ public class MainHook implements IXposedHookLoadPackage {
                 new ColorFilterHook(filter, lpparam.packageName)
             );
             
-            XposedBridge.log(TAG + ": Custom color mapping applied!");
+            XposedBridge.log(TAG + ": Dark mode hooks applied successfully!");
             
         } catch (Throwable t) {
             XposedBridge.log(TAG + ": Error: " + t.getMessage());
@@ -108,7 +91,7 @@ public class MainHook implements IXposedHookLoadPackage {
                 
                 if (isRoot) {
                     if (hookCount < 3) {
-                        XposedBridge.log(TAG + ": Applying custom colors to " + view.getClass().getSimpleName());
+                        XposedBridge.log(TAG + ": Applying dark mode to " + view.getClass().getSimpleName());
                         hookCount++;
                     }
                     
