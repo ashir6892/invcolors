@@ -145,7 +145,6 @@ public class MainActivity extends Activity {
         appsListLayout.removeAllViews();
 
         Executors.newSingleThreadExecutor().execute(() -> {
-            List<AppInfo> apps = new ArrayList<>();
             
             List<AppInfo> apps = new ArrayList<>();
             Set<String> addedPackages = new HashSet<>();
