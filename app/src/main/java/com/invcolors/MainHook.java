@@ -1,6 +1,5 @@
 package com.invcolors;
 
-import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorMatrix;
@@ -15,13 +14,9 @@ import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
-import java.io.File;
-import java.io.FileOutputStream;
-
 public class MainHook implements IXposedHookLoadPackage {
 
     private static final String TAG = "InvColors";
-    private static final String HOOKED_APPS_DIR = "/data/data/com.invcolors/hooked_apps/";
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
@@ -32,19 +27,10 @@ public class MainHook implements IXposedHookLoadPackage {
             return;
         }
 
-        XposedBridge.log(TAG + ": ========================================");
-        XposedBridge.log(TAG + ": Loading for package: " + lpparam.packageName);
+        XposedBridge.log(TAG + ": Hooking " + lpparam.packageName);
         
-        // Register this app as hooked by creating a marker file
-        registerHookedApp(lpparam.packageName);
-        
-        // Use default white->black transformation
-        int sourceColor = Color.WHITE;
-        int targetColor = Color.BLACK;
-        
-        XposedBridge.log(TAG + ": Applying WHITE->BLACK dark mode");
-        
-        ColorMatrixColorFilter filter = createCustomColorFilter(sourceColor, targetColor);
+        // Apply color inversion filter
+        ColorMatrixColorFilter filter = createInversionFilter();
         
         try {
             // Hook ViewGroup.dispatchDraw()
@@ -52,7 +38,7 @@ public class MainHook implements IXposedHookLoadPackage {
                 ViewGroup.class,
                 "dispatchDraw",
                 Canvas.class,
-                new ColorFilterHook(filter, lpparam.packageName)
+                new ColorFilterHook(filter)
             );
             
             // Hook View.draw()
@@ -60,51 +46,78 @@ public class MainHook implements IXposedHookLoadPackage {
                 View.class,
                 "draw",
                 Canvas.class,
-                new ColorFilterHook(filter, lpparam.packageName)
+                new ColorFilterHook(filter)
             );
             
-            XposedBridge.log(TAG + ": Dark mode hooks applied successfully!");
+            XposedBridge.log(TAG + ": View hooks applied");
+            
+            // Hook WebView for Cordova/Capacitor apps
+            hookWebView(lpparam);
             
         } catch (Throwable t) {
             XposedBridge.log(TAG + ": Error: " + t.getMessage());
-            XposedBridge.log(t);
         }
-        
-        XposedBridge.log(TAG + ": ========================================");
     }
 
-    private void registerHookedApp(String packageName) {
+    private void hookWebView(XC_LoadPackage.LoadPackageParam lpparam) {
         try {
-            File dir = new File(HOOKED_APPS_DIR);
-            if (!dir.exists()) {
-                dir.mkdirs();
-            }
+            Class<?> webViewClass = XposedHelpers.findClass("android.webkit.WebView", lpparam.classLoader);
             
-            File markerFile = new File(dir, packageName);
-            if (!markerFile.exists()) {
-                markerFile.createNewFile();
-                XposedBridge.log(TAG + ": Registered hooked app: " + packageName);
-            }
+            // Hook loadUrl
+            XposedHelpers.findAndHookMethod(webViewClass, "loadUrl", String.class, new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    injectDarkModeCSS(param.thisObject);
+                }
+            });
             
-            // Make file world-readable so module app can read it
-            markerFile.setReadable(true, false);
-            dir.setReadable(true, false);
-            dir.setExecutable(true, false);
+            // Hook onPageFinished
+            Class<?> webViewClientClass = XposedHelpers.findClass("android.webkit.WebViewClient", lpparam.classLoader);
+            XposedHelpers.findAndHookMethod(webViewClientClass, "onPageFinished", 
+                android.webkit.WebView.class, String.class, new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    injectDarkModeCSS(param.args[0]);
+                }
+            });
+            
+            XposedBridge.log(TAG + ": WebView hooks applied");
             
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": Failed to register app: " + t.getMessage());
+            XposedBridge.log(TAG + ": WebView hook failed: " + t.getMessage());
+        }
+    }
+    
+    private void injectDarkModeCSS(Object webView) {
+        try {
+            String script = 
+                "(function() {" +
+                "  if (document.getElementById('invcolors-dark')) return;" +
+                "  var style = document.createElement('style');" +
+                "  style.id = 'invcolors-dark';" +
+                "  style.innerHTML = '" +
+                "    html { filter: invert(1) hue-rotate(180deg) !important; }" +
+                "    img, video, [style*=\"background-image\"] { filter: invert(1) hue-rotate(180deg) !important; }" +
+                "  ';" +
+                "  document.head.appendChild(style);" +
+                "})();";
+            
+            XposedHelpers.callMethod(webView, "evaluateJavascript", script, null);
+        } catch (Throwable t) {
+            try {
+                XposedHelpers.callMethod(webView, "loadUrl", "javascript:" + script);
+            } catch (Throwable t2) {
+                // Silently fail
+            }
         }
     }
 
     private static class ColorFilterHook extends XC_MethodHook {
         private final ColorMatrixColorFilter filter;
-        private final String packageName;
         private Paint mPaint = null;
-        private int hookCount = 0;
 
-        ColorFilterHook(ColorMatrixColorFilter filter, String packageName) {
+        ColorFilterHook(ColorMatrixColorFilter filter) {
             this.filter = filter;
-            this.packageName = packageName;
         }
 
         @Override
@@ -118,11 +131,6 @@ public class MainHook implements IXposedHookLoadPackage {
                                view.getClass().getName().contains("DecorView");
                 
                 if (isRoot) {
-                    if (hookCount < 3) {
-                        XposedBridge.log(TAG + ": Applying dark mode to " + view.getClass().getSimpleName());
-                        hookCount++;
-                    }
-                    
                     if (mPaint == null) {
                         mPaint = new Paint();
                         mPaint.setColorFilter(filter);
@@ -153,24 +161,7 @@ public class MainHook implements IXposedHookLoadPackage {
         }
     }
 
-    /**
-     * Creates a custom color filter that replaces sourceColor with targetColor
-     */
-    private static ColorMatrixColorFilter createCustomColorFilter(int sourceColor, int targetColor) {
-        // For simple white->black or similar transformations, use color inversion
-        if (sourceColor == Color.WHITE && targetColor == Color.BLACK) {
-            XposedBridge.log(TAG + ": Using WHITE->BLACK inversion mode");
-            ColorMatrix matrix = new ColorMatrix(new float[] {
-                -1f,  0f,  0f,  0f, 255f,
-                 0f, -1f,  0f,  0f, 255f,
-                 0f,  0f, -1f,  0f, 255f,
-                 0f,  0f,  0f,  1f,   0f
-            });
-            return new ColorMatrixColorFilter(matrix);
-        }
-        
-        // For other color combinations, use a simpler approach
-        XposedBridge.log(TAG + ": Using custom color replacement mode");
+    private static ColorMatrixColorFilter createInversionFilter() {
         ColorMatrix matrix = new ColorMatrix(new float[] {
             -1f,  0f,  0f,  0f, 255f,
              0f, -1f,  0f,  0f, 255f,
