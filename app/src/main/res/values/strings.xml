@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">InvColors</string>
-    <string name="xposed_description">Inverts app colors using color matrix transformation</string>
+    <string name="app_name">InvColors - Dark Mode</string>
+    <string name="xposed_description">Forces pure AMOLED dark mode on apps (black backgrounds, white text)</string>
 </resources>

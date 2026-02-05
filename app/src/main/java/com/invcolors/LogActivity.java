@@ -31,7 +31,7 @@ public class LogActivity extends Activity {
 
         // Title
         TextView titleView = new TextView(this);
-        titleView.setText("InvColors Debug Logs");
+        titleView.setText("InvColors - Dark Mode Logs");
         titleView.setTextSize(20);
         titleView.setPadding(0, 0, 0, 20);
         mainLayout.addView(titleView);
