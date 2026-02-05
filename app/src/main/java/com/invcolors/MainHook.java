@@ -89,19 +89,19 @@ public class MainHook implements IXposedHookLoadPackage {
     }
     
     private void injectDarkModeCSS(Object webView) {
+        String script = 
+            "(function() {" +
+            "  if (document.getElementById('invcolors-dark')) return;" +
+            "  var style = document.createElement('style');" +
+            "  style.id = 'invcolors-dark';" +
+            "  style.innerHTML = '" +
+            "    html { filter: invert(1) hue-rotate(180deg) !important; }" +
+            "    img, video, [style*=\"background-image\"] { filter: invert(1) hue-rotate(180deg) !important; }" +
+            "  ';" +
+            "  document.head.appendChild(style);" +
+            "})();";
+        
         try {
-            String script = 
-                "(function() {" +
-                "  if (document.getElementById('invcolors-dark')) return;" +
-                "  var style = document.createElement('style');" +
-                "  style.id = 'invcolors-dark';" +
-                "  style.innerHTML = '" +
-                "    html { filter: invert(1) hue-rotate(180deg) !important; }" +
-                "    img, video, [style*=\"background-image\"] { filter: invert(1) hue-rotate(180deg) !important; }" +
-                "  ';" +
-                "  document.head.appendChild(style);" +
-                "})();";
-            
             XposedHelpers.callMethod(webView, "evaluateJavascript", script, null);
         } catch (Throwable t) {
             try {

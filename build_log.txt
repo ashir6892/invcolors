@@ -1,0 +1,274 @@
+build	Set up job	﻿2026-02-05T19:12:51.2179952Z Current runner version: '2.331.0'
+build	Set up job	2026-02-05T19:12:51.2206756Z ##[group]Runner Image Provisioner
+build	Set up job	2026-02-05T19:12:51.2208087Z Hosted Compute Agent
+build	Set up job	2026-02-05T19:12:51.2208981Z Version: 20260123.484
+build	Set up job	2026-02-05T19:12:51.2210025Z Commit: 6bd6555ca37d84114959e1c76d2c01448ff61c5d
+build	Set up job	2026-02-05T19:12:51.2211490Z Build Date: 2026-01-23T19:41:17Z
+build	Set up job	2026-02-05T19:12:51.2212482Z Worker ID: {754db919-6f86-415a-b586-c0560daddaab}
+build	Set up job	2026-02-05T19:12:51.2213687Z Azure Region: eastus2
+build	Set up job	2026-02-05T19:12:51.2214606Z ##[endgroup]
+build	Set up job	2026-02-05T19:12:51.2216809Z ##[group]Operating System
+build	Set up job	2026-02-05T19:12:51.2217840Z Ubuntu
+build	Set up job	2026-02-05T19:12:51.2218824Z 24.04.3
+build	Set up job	2026-02-05T19:12:51.2219643Z LTS
+build	Set up job	2026-02-05T19:12:51.2220877Z ##[endgroup]
+build	Set up job	2026-02-05T19:12:51.2221768Z ##[group]Runner Image
+build	Set up job	2026-02-05T19:12:51.2222774Z Image: ubuntu-24.04
+build	Set up job	2026-02-05T19:12:51.2223924Z Version: 20260126.10.1
+build	Set up job	2026-02-05T19:12:51.2225717Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260126.10/images/ubuntu/Ubuntu2404-Readme.md
+build	Set up job	2026-02-05T19:12:51.2228543Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260126.10
+build	Set up job	2026-02-05T19:12:51.2230135Z ##[endgroup]
+build	Set up job	2026-02-05T19:12:51.2232491Z ##[group]GITHUB_TOKEN Permissions
+build	Set up job	2026-02-05T19:12:51.2235650Z Contents: read
+build	Set up job	2026-02-05T19:12:51.2236701Z Metadata: read
+build	Set up job	2026-02-05T19:12:51.2238524Z Packages: read
+build	Set up job	2026-02-05T19:12:51.2239399Z ##[endgroup]
+build	Set up job	2026-02-05T19:12:51.2242751Z Secret source: Actions
+build	Set up job	2026-02-05T19:12:51.2244287Z Prepare workflow directory
+build	Set up job	2026-02-05T19:12:51.2700929Z Prepare all required actions
+build	Set up job	2026-02-05T19:12:51.2755665Z Getting action download info
+build	Set up job	2026-02-05T19:12:51.6015537Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+build	Set up job	2026-02-05T19:12:51.7397666Z Download action repository 'actions/setup-java@v4' (SHA:c1e323688fd81a25caa38c78aa6df2d33d3e20d9)
+build	Set up job	2026-02-05T19:12:52.0925270Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+build	Set up job	2026-02-05T19:12:52.2057571Z Download action repository 'softprops/action-gh-release@v1' (SHA:de2c0eb89ae2a093876385947365aca7b0e5f844)
+build	Set up job	2026-02-05T19:12:52.5076529Z Complete job name: build
+build	Checkout code	﻿2026-02-05T19:12:52.5776012Z ##[group]Run actions/checkout@v4
+build	Checkout code	2026-02-05T19:12:52.5776891Z with:
+build	Checkout code	2026-02-05T19:12:52.5777438Z   repository: ashir6892/***
+build	Checkout code	2026-02-05T19:12:52.5778038Z   token: ***
+build	Checkout code	2026-02-05T19:12:52.5778432Z   ssh-strict: true
+build	Checkout code	2026-02-05T19:12:52.5778821Z   ssh-user: git
+build	Checkout code	2026-02-05T19:12:52.5779228Z   persist-credentials: true
+build	Checkout code	2026-02-05T19:12:52.5779686Z   clean: true
+build	Checkout code	2026-02-05T19:12:52.5780094Z   sparse-checkout-cone-mode: true
+build	Checkout code	2026-02-05T19:12:52.5780756Z   fetch-depth: 1
+build	Checkout code	2026-02-05T19:12:52.5781246Z   fetch-tags: false
+build	Checkout code	2026-02-05T19:12:52.5781657Z   show-progress: true
+build	Checkout code	2026-02-05T19:12:52.5782066Z   lfs: false
+build	Checkout code	2026-02-05T19:12:52.5782435Z   submodules: false
+build	Checkout code	2026-02-05T19:12:52.5782868Z   set-safe-directory: true
+build	Checkout code	2026-02-05T19:12:52.5783673Z ##[endgroup]
+build	Checkout code	2026-02-05T19:12:52.6885105Z Syncing repository: ashir6892/***
+build	Checkout code	2026-02-05T19:12:52.6888705Z ##[group]Getting Git version info
+build	Checkout code	2026-02-05T19:12:52.6890070Z Working directory is '/home/runner/work/***/***'
+build	Checkout code	2026-02-05T19:12:52.6891932Z [command]/usr/bin/git version
+build	Checkout code	2026-02-05T19:12:52.6969685Z git version 2.52.0
+build	Checkout code	2026-02-05T19:12:52.6997393Z ##[endgroup]
+build	Checkout code	2026-02-05T19:12:52.7021855Z Temporarily overriding HOME='/home/runner/work/_temp/a1dbe026-554f-46a6-af1a-64fa10bc2f29' before making global git config changes
+build	Checkout code	2026-02-05T19:12:52.7024292Z Adding repository directory to the temporary git global config as a safe directory
+build	Checkout code	2026-02-05T19:12:52.7028926Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/***/***
+build	Checkout code	2026-02-05T19:12:52.7069650Z Deleting the contents of '/home/runner/work/***/***'
+build	Checkout code	2026-02-05T19:12:52.7073746Z ##[group]Initializing the repository
+build	Checkout code	2026-02-05T19:12:52.7078688Z [command]/usr/bin/git init /home/runner/work/***/***
+build	Checkout code	2026-02-05T19:12:52.7205477Z hint: Using 'master' as the name for the initial branch. This default branch name
+build	Checkout code	2026-02-05T19:12:52.7207312Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+build	Checkout code	2026-02-05T19:12:52.7208252Z hint: to use in all of your new repositories, which will suppress this warning,
+build	Checkout code	2026-02-05T19:12:52.7209453Z hint: call:
+build	Checkout code	2026-02-05T19:12:52.7210048Z hint:
+build	Checkout code	2026-02-05T19:12:52.7210813Z hint: 	git config --global init.defaultBranch <name>
+build	Checkout code	2026-02-05T19:12:52.7211925Z hint:
+build	Checkout code	2026-02-05T19:12:52.7212980Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+build	Checkout code	2026-02-05T19:12:52.7214663Z hint: 'development'. The just-created branch can be renamed via this command:
+build	Checkout code	2026-02-05T19:12:52.7216014Z hint:
+build	Checkout code	2026-02-05T19:12:52.7216785Z hint: 	git branch -m <name>
+build	Checkout code	2026-02-05T19:12:52.7217627Z hint:
+build	Checkout code	2026-02-05T19:12:52.7218674Z hint: Disable this message with "git config set advice.defaultBranchName false"
+build	Checkout code	2026-02-05T19:12:52.7220795Z Initialized empty Git repository in /home/runner/work/***/***/.git/
+build	Checkout code	2026-02-05T19:12:52.7223853Z [command]/usr/bin/git remote add origin https://github.com/ashir6892/***
+build	Checkout code	2026-02-05T19:12:52.7257919Z ##[endgroup]
+build	Checkout code	2026-02-05T19:12:52.7259431Z ##[group]Disabling automatic garbage collection
+build	Checkout code	2026-02-05T19:12:52.7262868Z [command]/usr/bin/git config --local gc.auto 0
+build	Checkout code	2026-02-05T19:12:52.7292701Z ##[endgroup]
+build	Checkout code	2026-02-05T19:12:52.7294280Z ##[group]Setting up auth
+build	Checkout code	2026-02-05T19:12:52.7300084Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+build	Checkout code	2026-02-05T19:12:52.7331751Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+build	Checkout code	2026-02-05T19:12:52.7687245Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+build	Checkout code	2026-02-05T19:12:52.7716746Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+build	Checkout code	2026-02-05T19:12:52.7938502Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+build	Checkout code	2026-02-05T19:12:52.7969705Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+build	Checkout code	2026-02-05T19:12:52.8190653Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+build	Checkout code	2026-02-05T19:12:52.8225538Z ##[endgroup]
+build	Checkout code	2026-02-05T19:12:52.8226563Z ##[group]Fetching the repository
+build	Checkout code	2026-02-05T19:12:52.8233914Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +1bc53ef6e18e870ce1a99a0cc380ba84aa51bf6f:refs/remotes/origin/master
+build	Checkout code	2026-02-05T19:12:53.0230746Z From https://github.com/ashir6892/***
+build	Checkout code	2026-02-05T19:12:53.0232392Z  * [new ref]         1bc53ef6e18e870ce1a99a0cc380ba84aa51bf6f -> origin/master
+build	Checkout code	2026-02-05T19:12:53.0264116Z ##[endgroup]
+build	Checkout code	2026-02-05T19:12:53.0265310Z ##[group]Determining the checkout info
+build	Checkout code	2026-02-05T19:12:53.0266604Z ##[endgroup]
+build	Checkout code	2026-02-05T19:12:53.0271065Z [command]/usr/bin/git sparse-checkout disable
+build	Checkout code	2026-02-05T19:12:53.0311751Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+build	Checkout code	2026-02-05T19:12:53.0337849Z ##[group]Checking out the ref
+build	Checkout code	2026-02-05T19:12:53.0341655Z [command]/usr/bin/git checkout --progress --force -B master refs/remotes/origin/master
+build	Checkout code	2026-02-05T19:12:53.0406508Z Reset branch 'master'
+build	Checkout code	2026-02-05T19:12:53.0409589Z branch 'master' set up to track 'origin/master'.
+build	Checkout code	2026-02-05T19:12:53.0416090Z ##[endgroup]
+build	Checkout code	2026-02-05T19:12:53.0450013Z [command]/usr/bin/git log -1 --format=%H
+build	Checkout code	2026-02-05T19:12:53.0471599Z 1bc53ef6e18e870ce1a99a0cc380ba84aa51bf6f
+build	Set up JDK 17	﻿2026-02-05T19:12:53.0761543Z ##[group]Run actions/setup-java@v4
+build	Set up JDK 17	2026-02-05T19:12:53.0762248Z with:
+build	Set up JDK 17	2026-02-05T19:12:53.0762796Z   java-version: 17
+build	Set up JDK 17	2026-02-05T19:12:53.0763290Z   distribution: temurin
+build	Set up JDK 17	2026-02-05T19:12:53.0763812Z   cache: gradle
+build	Set up JDK 17	2026-02-05T19:12:53.0764330Z   java-package: jdk
+build	Set up JDK 17	2026-02-05T19:12:53.0764880Z   check-latest: false
+build	Set up JDK 17	2026-02-05T19:12:53.0765553Z   server-id: github
+build	Set up JDK 17	2026-02-05T19:12:53.0766104Z   server-username: GITHUB_ACTOR
+build	Set up JDK 17	2026-02-05T19:12:53.0766700Z   server-password: GITHUB_TOKEN
+build	Set up JDK 17	2026-02-05T19:12:53.0767271Z   overwrite-settings: true
+build	Set up JDK 17	2026-02-05T19:12:53.0767807Z   job-status: success
+build	Set up JDK 17	2026-02-05T19:12:53.0768550Z   token: ***
+build	Set up JDK 17	2026-02-05T19:12:53.0769029Z ##[endgroup]
+build	Set up JDK 17	2026-02-05T19:12:53.2927409Z ##[group]Installed distributions
+build	Set up JDK 17	2026-02-05T19:12:53.3000154Z Resolved Java 17.0.18+8 from tool-cache
+build	Set up JDK 17	2026-02-05T19:12:53.3001492Z Setting Java 17.0.18+8 as the default
+build	Set up JDK 17	2026-02-05T19:12:53.3014975Z Creating toolchains.xml for JDK version 17 from temurin
+build	Set up JDK 17	2026-02-05T19:12:53.3097921Z Writing to /home/runner/.m2/toolchains.xml
+build	Set up JDK 17	2026-02-05T19:12:53.3098682Z 
+build	Set up JDK 17	2026-02-05T19:12:53.3098885Z Java configuration:
+build	Set up JDK 17	2026-02-05T19:12:53.3100157Z   Distribution: temurin
+build	Set up JDK 17	2026-02-05T19:12:53.3100826Z   Version: 17.0.18+8
+build	Set up JDK 17	2026-02-05T19:12:53.3101767Z   Path: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.18-8/x64
+build	Set up JDK 17	2026-02-05T19:12:53.3102323Z 
+build	Set up JDK 17	2026-02-05T19:12:53.3103024Z ##[endgroup]
+build	Set up JDK 17	2026-02-05T19:12:53.3113673Z Creating settings.xml with server-id: github
+build	Set up JDK 17	2026-02-05T19:12:53.3121142Z Writing to /home/runner/.m2/settings.xml
+build	Set up JDK 17	2026-02-05T19:12:53.4816174Z Cache hit for: setup-java-Linux-x64-gradle-8986fe6b8adc02da41aa4b60f6188d4c2af3f5bc66ac619b8b096777c24761d1
+build	Set up JDK 17	2026-02-05T19:12:54.5330723Z Received 239075328 of 342073911 (69.9%), 225.3 MBs/sec
+build	Set up JDK 17	2026-02-05T19:12:54.9549140Z Received 342073911 of 342073911 (100.0%), 227.3 MBs/sec
+build	Set up JDK 17	2026-02-05T19:12:54.9550664Z Cache Size: ~326 MB (342073911 B)
+build	Set up JDK 17	2026-02-05T19:12:54.9589638Z [command]/usr/bin/tar -xf /home/runner/work/_temp/f5cc6105-a87b-4fee-97dd-566e7aab4df2/cache.tzst -P -C /home/runner/work/***/*** --use-compress-program unzstd
+build	Set up JDK 17	2026-02-05T19:12:55.7915014Z Cache restored successfully
+build	Set up JDK 17	2026-02-05T19:12:55.8597401Z Cache restored from key: setup-java-Linux-x64-gradle-8986fe6b8adc02da41aa4b60f6188d4c2af3f5bc66ac619b8b096777c24761d1
+build	Grant execute permission for gradlew	﻿2026-02-05T19:12:55.8794078Z ##[group]Run chmod +x gradlew
+build	Grant execute permission for gradlew	2026-02-05T19:12:55.8794523Z [36;1mchmod +x gradlew[0m
+build	Grant execute permission for gradlew	2026-02-05T19:12:55.8832613Z shell: /usr/bin/bash -e {0}
+build	Grant execute permission for gradlew	2026-02-05T19:12:55.8832970Z env:
+build	Grant execute permission for gradlew	2026-02-05T19:12:55.8833346Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.18-8/x64
+build	Grant execute permission for gradlew	2026-02-05T19:12:55.8833923Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.18-8/x64
+build	Grant execute permission for gradlew	2026-02-05T19:12:55.8834362Z ##[endgroup]
+build	Decode Keystore	﻿2026-02-05T19:12:55.8958651Z ##[group]Run echo "$KEYSTORE_BASE64" | base64 --decode > app/release.keystore
+build	Decode Keystore	2026-02-05T19:12:55.8959345Z [36;1mecho "$KEYSTORE_BASE64" | base64 --decode > app/release.keystore[0m
+build	Decode Keystore	2026-02-05T19:12:55.8990018Z shell: /usr/bin/bash -e {0}
+build	Decode Keystore	2026-02-05T19:12:55.8990644Z env:
+build	Decode Keystore	2026-02-05T19:12:55.8991056Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.18-8/x64
+build	Decode Keystore	2026-02-05T19:12:55.8991620Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.18-8/x64
+build	Decode Keystore	2026-02-05T19:12:55.9011959Z   KEYSTORE_BASE64: ***
+build	Decode Keystore	2026-02-05T19:12:55.9012251Z ##[endgroup]
+build	Build Release APK	﻿2026-02-05T19:12:55.9116724Z ##[group]Run ./gradlew assembleRelease
+build	Build Release APK	2026-02-05T19:12:55.9117154Z [36;1m./gradlew assembleRelease[0m
+build	Build Release APK	2026-02-05T19:12:55.9147664Z shell: /usr/bin/bash -e {0}
+build	Build Release APK	2026-02-05T19:12:55.9147984Z env:
+build	Build Release APK	2026-02-05T19:12:55.9148355Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.18-8/x64
+build	Build Release APK	2026-02-05T19:12:55.9148927Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.18-8/x64
+build	Build Release APK	2026-02-05T19:12:55.9149461Z   KEYSTORE_PASSWORD: ***
+build	Build Release APK	2026-02-05T19:12:55.9149765Z   KEY_ALIAS: ***
+build	Build Release APK	2026-02-05T19:12:55.9150068Z   KEY_PASSWORD: ***
+build	Build Release APK	2026-02-05T19:12:55.9150607Z ##[endgroup]
+build	Build Release APK	2026-02-05T19:12:56.6141255Z 
+build	Build Release APK	2026-02-05T19:12:56.6142363Z Welcome to Gradle 8.1.1!
+build	Build Release APK	2026-02-05T19:12:56.6143089Z 
+build	Build Release APK	2026-02-05T19:12:56.6148382Z Here are the highlights of this release:
+build	Build Release APK	2026-02-05T19:12:56.6149557Z  - Stable configuration cache
+build	Build Release APK	2026-02-05T19:12:56.6150868Z  - Experimental Kotlin DSL assignment syntax
+build	Build Release APK	2026-02-05T19:12:56.6152099Z  - Building with Java 20
+build	Build Release APK	2026-02-05T19:12:56.6152509Z 
+build	Build Release APK	2026-02-05T19:12:56.6153097Z For more details see https://docs.gradle.org/8.1.1/release-notes.html
+build	Build Release APK	2026-02-05T19:12:56.6154069Z 
+build	Build Release APK	2026-02-05T19:12:56.8131553Z Starting a Gradle Daemon (subsequent builds will be faster)
+build	Build Release APK	2026-02-05T19:13:03.9161792Z WARNING: We recommend using a newer Android Gradle plugin to use compileSdk = 34
+build	Build Release APK	2026-02-05T19:13:03.9173169Z 
+build	Build Release APK	2026-02-05T19:13:03.9175577Z This Android Gradle plugin (8.1.0) was tested up to compileSdk = 33 (and compileSdkPreview = "UpsideDownCakePrivacySandbox").
+build	Build Release APK	2026-02-05T19:13:03.9177770Z 
+build	Build Release APK	2026-02-05T19:13:03.9178292Z You are strongly encouraged to update your project to use a newer
+build	Build Release APK	2026-02-05T19:13:03.9193164Z Android Gradle plugin that has been tested with compileSdk = 34.
+build	Build Release APK	2026-02-05T19:13:03.9193770Z 
+build	Build Release APK	2026-02-05T19:13:03.9194148Z If you are already using the latest version of the Android Gradle plugin,
+build	Build Release APK	2026-02-05T19:13:03.9195145Z you may need to wait until a newer version with support for compileSdk = 34 is available.
+build	Build Release APK	2026-02-05T19:13:03.9195863Z 
+build	Build Release APK	2026-02-05T19:13:03.9196062Z To suppress this warning, add/update
+build	Build Release APK	2026-02-05T19:13:03.9196683Z     android.suppressUnsupportedCompileSdk=34
+build	Build Release APK	2026-02-05T19:13:03.9197288Z to this project's gradle.properties.
+build	Build Release APK	2026-02-05T19:13:07.0127950Z Checking the license for package Android SDK Build-Tools 33.0.1 in /usr/local/lib/android/sdk/licenses
+build	Build Release APK	2026-02-05T19:13:07.1128620Z License for package Android SDK Build-Tools 33.0.1 accepted.
+build	Build Release APK	2026-02-05T19:13:07.1132852Z Preparing "Install Android SDK Build-Tools 33.0.1 v.33.0.1".
+build	Build Release APK	2026-02-05T19:13:09.3129760Z "Install Android SDK Build-Tools 33.0.1 v.33.0.1" ready.
+build	Build Release APK	2026-02-05T19:13:09.3131059Z Installing Android SDK Build-Tools 33.0.1 in /usr/local/lib/android/sdk/build-tools/33.0.1
+build	Build Release APK	2026-02-05T19:13:09.3132058Z "Install Android SDK Build-Tools 33.0.1 v.33.0.1" complete.
+build	Build Release APK	2026-02-05T19:13:09.8145086Z "Install Android SDK Build-Tools 33.0.1 v.33.0.1" finished.
+build	Build Release APK	2026-02-05T19:13:10.3145168Z > Task :app:preBuild UP-TO-DATE
+build	Build Release APK	2026-02-05T19:13:10.3164255Z > Task :app:preReleaseBuild UP-TO-DATE
+build	Build Release APK	2026-02-05T19:13:10.5128963Z > Task :app:javaPreCompileRelease
+build	Build Release APK	2026-02-05T19:13:10.5129782Z > Task :app:checkReleaseAarMetadata
+build	Build Release APK	2026-02-05T19:13:10.5130650Z > Task :app:generateReleaseResValues
+build	Build Release APK	2026-02-05T19:13:10.5131462Z > Task :app:mapReleaseSourceSetPaths
+build	Build Release APK	2026-02-05T19:13:10.5132154Z > Task :app:generateReleaseResources
+build	Build Release APK	2026-02-05T19:13:10.7146005Z > Task :app:createReleaseCompatibleScreenManifests
+build	Build Release APK	2026-02-05T19:13:10.7146701Z > Task :app:extractDeepLinksRelease
+build	Build Release APK	2026-02-05T19:13:10.8128016Z > Task :app:processReleaseMainManifest
+build	Build Release APK	2026-02-05T19:13:10.8128637Z > Task :app:mergeReleaseResources
+build	Build Release APK	2026-02-05T19:13:11.2170703Z > Task :app:processReleaseManifest
+build	Build Release APK	2026-02-05T19:13:11.2171710Z > Task :app:extractProguardFiles
+build	Build Release APK	2026-02-05T19:13:11.2172531Z > Task :app:mergeReleaseJniLibFolders
+build	Build Release APK	2026-02-05T19:13:11.2173274Z > Task :app:mergeReleaseNativeLibs NO-SOURCE
+build	Build Release APK	2026-02-05T19:13:11.2174083Z > Task :app:stripReleaseDebugSymbols NO-SOURCE
+build	Build Release APK	2026-02-05T19:13:11.2175085Z > Task :app:extractReleaseNativeSymbolTables NO-SOURCE
+build	Build Release APK	2026-02-05T19:13:11.2176507Z > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+build	Build Release APK	2026-02-05T19:13:11.2177308Z > Task :app:checkReleaseDuplicateClasses
+build	Build Release APK	2026-02-05T19:13:11.2178028Z > Task :app:desugarReleaseFileDependencies
+build	Build Release APK	2026-02-05T19:13:11.3127460Z > Task :app:processReleaseManifestForPackage
+build	Build Release APK	2026-02-05T19:13:11.3129352Z > Task :app:mergeExtDexRelease
+build	Build Release APK	2026-02-05T19:13:12.1193050Z > Task :app:mergeReleaseArtProfile
+build	Build Release APK	2026-02-05T19:13:12.1195208Z > Task :app:mergeReleaseShaders
+build	Build Release APK	2026-02-05T19:13:12.1216543Z > Task :app:compileReleaseShaders NO-SOURCE
+build	Build Release APK	2026-02-05T19:13:12.1242205Z > Task :app:generateReleaseAssets UP-TO-DATE
+build	Build Release APK	2026-02-05T19:13:12.1242781Z > Task :app:mergeReleaseAssets
+build	Build Release APK	2026-02-05T19:13:12.1243244Z > Task :app:processReleaseJavaRes NO-SOURCE
+build	Build Release APK	2026-02-05T19:13:12.1243791Z > Task :app:compressReleaseAssets
+build	Build Release APK	2026-02-05T19:13:12.2126942Z > Task :app:collectReleaseDependencies
+build	Build Release APK	2026-02-05T19:13:12.2130974Z > Task :app:mergeReleaseJavaResource
+build	Build Release APK	2026-02-05T19:13:12.3138341Z > Task :app:processReleaseResources
+build	Build Release APK	2026-02-05T19:13:12.3173922Z > Task :app:sdkReleaseDependencyData
+build	Build Release APK	2026-02-05T19:13:14.0129104Z 
+build	Build Release APK	2026-02-05T19:13:14.0134630Z > Task :app:compileReleaseJavaWithJavac FAILED
+build	Build Release APK	2026-02-05T19:13:14.0145864Z /home/runner/work/***/***/app/src/main/java/com/***/MainHook.java:108: error: cannot find symbol
+build	Build Release APK	2026-02-05T19:13:14.0150487Z                 XposedHelpers.callMethod(webView, "loadUrl", "javascript:" + script);
+build	Build Release APK	2026-02-05T19:13:14.0155190Z                                                                              ^
+build	Build Release APK	2026-02-05T19:13:14.0157082Z   symbol:   variable script
+build	Build Release APK	2026-02-05T19:13:14.0158794Z   location: class MainHook
+build	Build Release APK	2026-02-05T19:13:14.0171160Z Note: /home/runner/work/***/***/app/src/main/java/com/***/MainHook.java uses or overrides a deprecated API.
+build	Build Release APK	2026-02-05T19:13:14.0172182Z Note: Recompile with -Xlint:deprecation for details.
+build	Build Release APK	2026-02-05T19:13:14.0172989Z 1 error
+build	Build Release APK	2026-02-05T19:13:14.1127058Z 
+build	Build Release APK	2026-02-05T19:13:14.1131748Z FAILURE: Build failed with an exception.
+build	Build Release APK	2026-02-05T19:13:14.1138617Z 
+build	Build Release APK	2026-02-05T19:13:14.1139192Z * What went wrong:
+build	Build Release APK	2026-02-05T19:13:14.1140073Z Execution failed for task ':app:compileReleaseJavaWithJavac'.
+build	Build Release APK	2026-02-05T19:13:14.1141166Z > Compilation failed; see the compiler error output for details.
+build	Build Release APK	2026-02-05T19:13:14.1141694Z 
+build	Build Release APK	2026-02-05T19:13:14.1141824Z * Try:
+build	Build Release APK	2026-02-05T19:13:14.1142259Z > Run with --stacktrace option to get the stack trace.
+build	Build Release APK	2026-02-05T19:13:14.1142953Z > Run with --info or --debug option to get more log output.
+build	Build Release APK	2026-02-05T19:13:14.1143585Z > Run with --scan to get full insights.
+build	Build Release APK	2026-02-05T19:13:14.1143929Z 
+build	Build Release APK	2026-02-05T19:13:14.1144147Z * Get more help at https://help.gradle.org
+build	Build Release APK	2026-02-05T19:13:14.1144521Z 
+build	Build Release APK	2026-02-05T19:13:14.1144675Z BUILD FAILED in 17s
+build	Build Release APK	2026-02-05T19:13:14.1145083Z 24 actionable tasks: 24 executed
+build	Build Release APK	2026-02-05T19:13:14.4614170Z ##[error]Process completed with exit code 1.
+build	Post Set up JDK 17	﻿2026-02-05T19:13:14.4722946Z Post job cleanup.
+build	Post Checkout code	﻿2026-02-05T19:13:14.6453043Z Post job cleanup.
+build	Post Checkout code	2026-02-05T19:13:14.7410434Z [command]/usr/bin/git version
+build	Post Checkout code	2026-02-05T19:13:14.7429794Z git version 2.52.0
+build	Post Checkout code	2026-02-05T19:13:14.7474244Z Temporarily overriding HOME='/home/runner/work/_temp/8acf4f74-b9f7-49fc-be5e-8f5d15f4d721' before making global git config changes
+build	Post Checkout code	2026-02-05T19:13:14.7475689Z Adding repository directory to the temporary git global config as a safe directory
+build	Post Checkout code	2026-02-05T19:13:14.7481065Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/***/***
+build	Post Checkout code	2026-02-05T19:13:14.7516114Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+build	Post Checkout code	2026-02-05T19:13:14.7548485Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+build	Post Checkout code	2026-02-05T19:13:14.7775036Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+build	Post Checkout code	2026-02-05T19:13:14.7795032Z http.https://github.com/.extraheader
+build	Post Checkout code	2026-02-05T19:13:14.7807475Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+build	Post Checkout code	2026-02-05T19:13:14.7837512Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+build	Post Checkout code	2026-02-05T19:13:14.8056653Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+build	Post Checkout code	2026-02-05T19:13:14.8088735Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+build	Complete job	﻿2026-02-05T19:13:14.8412911Z Cleaning up orphan processes
+build	Complete job	2026-02-05T19:13:14.8663128Z Terminate orphan process: pid (2392) (java)
