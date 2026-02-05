@@ -6,20 +6,21 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -34,6 +35,9 @@ public class MainActivity extends Activity {
     private PackageManager packageManager;
     private TextView statusView;
     private ProgressBar progressBar;
+    private EditText searchBox;
+    private List<AppInfo> allApps = new ArrayList<>();
+    private Set<String> pinnedApps = new HashSet<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +45,9 @@ public class MainActivity extends Activity {
         
         prefs = getSharedPreferences("invcolors_settings", Context.MODE_PRIVATE);
         packageManager = getPackageManager();
+        
+        // Load pinned apps
+        pinnedApps = new HashSet<>(prefs.getStringSet("pinned_apps", new HashSet<>()));
 
         // Main layout
         LinearLayout mainLayout = new LinearLayout(this);
@@ -50,60 +57,64 @@ public class MainActivity extends Activity {
 
         // Title
         TextView titleView = new TextView(this);
-        titleView.setText("InvColors - Hooked Apps");
-        titleView.setTextSize(22);
+        titleView.setText("InvColors - Color Mapping");
+        titleView.setTextSize(20);
         titleView.setTextColor(0xFFFFFFFF);
-        titleView.setPadding(0, 0, 0, 20);
+        titleView.setPadding(0, 0, 0, 15);
         mainLayout.addView(titleView);
 
-        // Status text
+        // Search box
+        searchBox = new EditText(this);
+        searchBox.setHint("Search apps...");
+        searchBox.setTextColor(0xFFFFFFFF);
+        searchBox.setHintTextColor(0xFF888888);
+        searchBox.setBackgroundColor(0xFF333333);
+        searchBox.setPadding(20, 15, 20, 15);
+        searchBox.setSingleLine(true);
+        LinearLayout.LayoutParams searchParams = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        searchParams.setMargins(0, 0, 0, 15);
+        searchBox.setLayoutParams(searchParams);
+        searchBox.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                filterApps(s.toString());
+            }
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+        mainLayout.addView(searchBox);
+
+        // Status and buttons row
+        LinearLayout topRow = new LinearLayout(this);
+        topRow.setOrientation(LinearLayout.HORIZONTAL);
+        
         statusView = new TextView(this);
-        statusView.setText("Checking root access...");
-        statusView.setTextSize(14);
+        statusView.setText("Loading...");
+        statusView.setTextSize(12);
         statusView.setTextColor(0xFFAAAAAA);
-        statusView.setPadding(0, 0, 0, 10);
-        mainLayout.addView(statusView);
+        statusView.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+        topRow.addView(statusView);
+
+        Button logsButton = new Button(this);
+        logsButton.setText("Logs");
+        logsButton.setTextSize(11);
+        logsButton.setPadding(15, 5, 15, 5);
+        logsButton.setOnClickListener(v -> startActivity(new Intent(this, LogActivity.class)));
+        topRow.addView(logsButton);
+
+        mainLayout.addView(topRow);
 
         // Progress bar
         progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         progressBar.setIndeterminate(true);
         LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, 10);
-        progressParams.setMargins(0, 0, 0, 20);
+            ViewGroup.LayoutParams.MATCH_PARENT, 8);
+        progressParams.setMargins(0, 10, 0, 10);
         progressBar.setLayoutParams(progressParams);
         mainLayout.addView(progressBar);
-
-        // Buttons row
-        LinearLayout buttonsLayout = new LinearLayout(this);
-        buttonsLayout.setOrientation(LinearLayout.HORIZONTAL);
-        
-        Button logsButton = new Button(this);
-        logsButton.setText("Logs");
-        logsButton.setOnClickListener(v -> {
-            startActivity(new Intent(this, LogActivity.class));
-        });
-        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
-            0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
-        buttonParams.setMargins(0, 0, 5, 0);
-        logsButton.setLayoutParams(buttonParams);
-        buttonsLayout.addView(logsButton);
-
-        Button refreshButton = new Button(this);
-        refreshButton.setText("Refresh");
-        refreshButton.setOnClickListener(v -> loadAppsAsync());
-        refreshButton.setLayoutParams(buttonParams);
-        buttonsLayout.addView(refreshButton);
-
-        mainLayout.addView(buttonsLayout);
-
-        // Divider
-        View divider = new View(this);
-        divider.setBackgroundColor(0xFF444444);
-        LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, 2);
-        dividerParams.setMargins(0, 20, 0, 20);
-        divider.setLayoutParams(dividerParams);
-        mainLayout.addView(divider);
 
         // Scroll view for apps
         ScrollView scrollView = new ScrollView(this);
@@ -116,157 +127,191 @@ public class MainActivity extends Activity {
         scrollView.addView(appsListLayout);
         mainLayout.addView(scrollView);
 
+        // Hint text
+        TextView hintView = new TextView(this);
+        hintView.setText("💡 Long-press app to pin to top");
+        hintView.setTextSize(11);
+        hintView.setTextColor(0xFF888888);
+        hintView.setPadding(0, 10, 0, 0);
+        mainLayout.addView(hintView);
+
         setContentView(mainLayout);
         loadAppsAsync();
     }
 
     private void loadAppsAsync() {
         progressBar.setVisibility(View.VISIBLE);
-        statusView.setText("Loading hooked apps from LSPosed...");
+        statusView.setText("Loading apps...");
         appsListLayout.removeAllViews();
 
         Executors.newSingleThreadExecutor().execute(() -> {
-            boolean rootAvailable = RootUtils.isRootAvailable();
             List<AppInfo> apps = new ArrayList<>();
             
-            if (rootAvailable) {
-                // Get LSPosed scope apps ONLY
-                List<String> lsposedApps = RootUtils.getLSPosedScopeApps();
-                
-                for (String packageName : lsposedApps) {
-                    String appName = packageName;
-                    // Try to get friendly app name
-                    try {
-                        ApplicationInfo appInfo = packageManager.getApplicationInfo(packageName, 0);
-                        appName = appInfo.loadLabel(packageManager).toString();
-                    } catch (Exception e) {
-                        // Keep package name
+            // Get all installed apps with launcher icons
+            try {
+                List<ApplicationInfo> installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA);
+                for (ApplicationInfo app : installedApps) {
+                    Intent launchIntent = packageManager.getLaunchIntentForPackage(app.packageName);
+                    if (launchIntent != null) {
+                        String appName = app.loadLabel(packageManager).toString();
+                        boolean isPinned = pinnedApps.contains(app.packageName);
+                        apps.add(new AppInfo(app.packageName, appName, isPinned));
                     }
-                    apps.add(new AppInfo(packageName, appName));
+                }
+            } catch (Exception e) {
+                // Fallback to root if PackageManager fails
+                if (RootUtils.isRootAvailable()) {
+                    List<RootUtils.AppData> rootApps = RootUtils.getInstalledAppsWithRoot();
+                    for (RootUtils.AppData app : rootApps) {
+                        boolean isPinned = pinnedApps.contains(app.packageName);
+                        apps.add(new AppInfo(app.packageName, app.appName, isPinned));
+                    }
                 }
             }
             
-            // Sort alphabetically
-            Collections.sort(apps, (a, b) -> a.name.compareToIgnoreCase(b.name));
+            // Sort: pinned first, then alphabetically
+            Collections.sort(apps, (a, b) -> {
+                if (a.isPinned && !b.isPinned) return -1;
+                if (!a.isPinned && b.isPinned) return 1;
+                return a.name.compareToIgnoreCase(b.name);
+            });
             
-            final List<AppInfo> finalApps = apps;
-            final boolean finalRootAvailable = rootAvailable;
+            allApps = apps;
             
             new Handler(Looper.getMainLooper()).post(() -> {
                 progressBar.setVisibility(View.GONE);
-                
-                String status = finalRootAvailable ? "✓ Root" : "✗ No root";
-                status += " | " + finalApps.size() + " hooked apps";
-                statusView.setText(status);
-                
-                if (finalApps.isEmpty()) {
-                    TextView emptyView = new TextView(this);
-                    emptyView.setText("No hooked apps found.\n\n" +
-                        "STEPS TO FIX:\n" +
-                        "1. Open LSPosed Manager\n" +
-                        "2. Go to Modules tab\n" +
-                        "3. Tap on InvColors\n" +
-                        "4. Enable it and select target apps\n" +
-                        "5. Reboot device\n" +
-                        "6. Tap Refresh here\n\n" +
-                        "DEBUG INFO:\n" + RootUtils.lastDebugLog);
-                    emptyView.setTextColor(0xFFAAAAAA);
-                    emptyView.setTextSize(12);
-                    emptyView.setPadding(10, 20, 10, 20);
-                    appsListLayout.addView(emptyView);
-                } else {
-                    for (AppInfo appInfo : finalApps) {
-                        addAppCard(appInfo);
-                    }
-                }
+                statusView.setText(apps.size() + " apps | " + pinnedApps.size() + " pinned");
+                displayApps(apps);
             });
         });
     }
 
+    private void filterApps(String query) {
+        if (query.isEmpty()) {
+            displayApps(allApps);
+            return;
+        }
+        
+        String lowerQuery = query.toLowerCase();
+        List<AppInfo> filtered = new ArrayList<>();
+        for (AppInfo app : allApps) {
+            if (app.name.toLowerCase().contains(lowerQuery) || 
+                app.packageName.toLowerCase().contains(lowerQuery)) {
+                filtered.add(app);
+            }
+        }
+        displayApps(filtered);
+    }
+
+    private void displayApps(List<AppInfo> apps) {
+        appsListLayout.removeAllViews();
+        
+        if (apps.isEmpty()) {
+            TextView emptyView = new TextView(this);
+            emptyView.setText("No apps found");
+            emptyView.setTextColor(0xFFAAAAAA);
+            emptyView.setPadding(10, 20, 10, 20);
+            appsListLayout.addView(emptyView);
+            return;
+        }
+        
+        for (AppInfo appInfo : apps) {
+            addAppCard(appInfo);
+        }
+    }
+
     private void addAppCard(AppInfo appInfo) {
         LinearLayout cardLayout = new LinearLayout(this);
-        cardLayout.setOrientation(LinearLayout.VERTICAL);
-        cardLayout.setBackgroundColor(0xFF2D4D2D); // Green for hooked
-        cardLayout.setPadding(15, 12, 15, 12);
+        cardLayout.setOrientation(LinearLayout.HORIZONTAL);
+        cardLayout.setBackgroundColor(appInfo.isPinned ? 0xFF3D3D1D : 0xFF2D2D2D);
+        cardLayout.setPadding(12, 10, 12, 10);
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT);
-        cardParams.setMargins(0, 0, 0, 8);
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        cardParams.setMargins(0, 0, 0, 6);
         cardLayout.setLayoutParams(cardParams);
 
-        // App name
+        // Long press to pin/unpin
+        cardLayout.setOnLongClickListener(v -> {
+            togglePin(appInfo);
+            return true;
+        });
+
+        // App info column
+        LinearLayout infoColumn = new LinearLayout(this);
+        infoColumn.setOrientation(LinearLayout.VERTICAL);
+        infoColumn.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+
+        // App name with pin indicator
         TextView nameView = new TextView(this);
-        nameView.setText(appInfo.name);
+        nameView.setText((appInfo.isPinned ? "📌 " : "") + appInfo.name);
         nameView.setTextColor(0xFFFFFFFF);
-        nameView.setTextSize(16);
-        cardLayout.addView(nameView);
+        nameView.setTextSize(14);
+        infoColumn.addView(nameView);
 
         // Package name
         TextView packageView = new TextView(this);
         packageView.setText(appInfo.packageName);
-        packageView.setTextColor(0xFF88FF88);
-        packageView.setTextSize(11);
-        packageView.setPadding(0, 2, 0, 10);
-        cardLayout.addView(packageView);
+        packageView.setTextColor(0xFF888888);
+        packageView.setTextSize(10);
+        infoColumn.addView(packageView);
 
-        // Buttons row
-        LinearLayout buttonsRow = new LinearLayout(this);
-        buttonsRow.setOrientation(LinearLayout.HORIZONTAL);
+        cardLayout.addView(infoColumn);
 
-        // Configure colors button
-        Button configButton = new Button(this);
-        configButton.setText("Set Colors");
-        configButton.setTextSize(12);
-        LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(
-            0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
-        btnParams.setMargins(0, 0, 5, 0);
-        configButton.setLayoutParams(btnParams);
-        configButton.setOnClickListener(v -> {
+        // Colors button
+        Button colorsButton = new Button(this);
+        colorsButton.setText("Colors");
+        colorsButton.setTextSize(11);
+        colorsButton.setPadding(15, 5, 15, 5);
+        colorsButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, ColorSettingsActivity.class);
             intent.putExtra("package_name", appInfo.packageName);
             startActivity(intent);
         });
-        buttonsRow.addView(configButton);
+        cardLayout.addView(colorsButton);
 
-        // Detect colors button
-        Button detectButton = new Button(this);
-        detectButton.setText("Detect Colors");
-        detectButton.setTextSize(12);
-        detectButton.setLayoutParams(btnParams);
-        detectButton.setOnClickListener(v -> {
-            Toast.makeText(this, "Extracting colors...", Toast.LENGTH_SHORT).show();
-            Executors.newSingleThreadExecutor().execute(() -> {
-                List<Integer> colors = RootUtils.extractColorsFromApk(appInfo.packageName);
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    if (colors.isEmpty()) {
-                        Toast.makeText(this, "No colors extracted", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(this, "Found " + colors.size() + " colors!", Toast.LENGTH_SHORT).show();
-                        Intent intent = new Intent(this, ColorSettingsActivity.class);
-                        intent.putExtra("package_name", appInfo.packageName);
-                        int[] colorArray = new int[colors.size()];
-                        for (int i = 0; i < colors.size(); i++) {
-                            colorArray[i] = colors.get(i);
-                        }
-                        intent.putExtra("detected_colors", colorArray);
-                        startActivity(intent);
-                    }
-                });
-            });
-        });
-        buttonsRow.addView(detectButton);
-
-        cardLayout.addView(buttonsRow);
         appsListLayout.addView(cardLayout);
+    }
+
+    private void togglePin(AppInfo appInfo) {
+        if (appInfo.isPinned) {
+            pinnedApps.remove(appInfo.packageName);
+            appInfo.isPinned = false;
+            Toast.makeText(this, "Unpinned: " + appInfo.name, Toast.LENGTH_SHORT).show();
+        } else {
+            pinnedApps.add(appInfo.packageName);
+            appInfo.isPinned = true;
+            Toast.makeText(this, "Pinned: " + appInfo.name, Toast.LENGTH_SHORT).show();
+        }
+        
+        // Save pinned apps
+        prefs.edit().putStringSet("pinned_apps", pinnedApps).apply();
+        
+        // Re-sort and display
+        Collections.sort(allApps, (a, b) -> {
+            if (a.isPinned && !b.isPinned) return -1;
+            if (!a.isPinned && b.isPinned) return 1;
+            return a.name.compareToIgnoreCase(b.name);
+        });
+        
+        String query = searchBox.getText().toString();
+        if (query.isEmpty()) {
+            displayApps(allApps);
+        } else {
+            filterApps(query);
+        }
+        
+        statusView.setText(allApps.size() + " apps | " + pinnedApps.size() + " pinned");
     }
 
     private static class AppInfo {
         String packageName;
         String name;
+        boolean isPinned;
 
-        AppInfo(String packageName, String name) {
+        AppInfo(String packageName, String name, boolean isPinned) {
             this.packageName = packageName;
             this.name = name;
+            this.isPinned = isPinned;
         }
     }
 }
