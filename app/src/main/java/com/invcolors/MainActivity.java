@@ -75,11 +75,11 @@ public class MainActivity extends Activity {
         buttonsLayout.addView(logsButton);
 
         Button toggleButton = new Button(this);
-        toggleButton.setText("Toggle System");
+        toggleButton.setText("Show All");
         toggleButton.setOnClickListener(v -> {
             showSystemApps = !showSystemApps;
             loadAllApps();
-            Toast.makeText(this, showSystemApps ? "Showing system apps" : "Hiding system apps", 
+            Toast.makeText(this, showSystemApps ? "Showing all (including services)" : "Showing apps with icons only", 
                          Toast.LENGTH_SHORT).show();
         });
         LinearLayout.LayoutParams toggleParams = new LinearLayout.LayoutParams(
@@ -142,23 +142,18 @@ public class MainActivity extends Activity {
         List<AppInfo> appList = new ArrayList<>();
         
         for (ApplicationInfo app : apps) {
-            // Better system app detection:
-            // - True system apps: not updated, no launcher icon
-            // - User apps: either not system, or system but updated (like pre-installed Google apps)
-            boolean isSystemApp = (app.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
-            boolean isUpdatedSystemApp = (app.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
-            
-            // Check if app has launcher intent (user-facing apps)
+            // Check if app has a launcher icon (user-visible apps)
             Intent launchIntent = packageManager.getLaunchIntentForPackage(app.packageName);
             boolean hasLauncherIcon = launchIntent != null;
             
-            // Consider it a "true system app" only if:
-            // - It's a system app AND not updated AND has no launcher icon
-            boolean isTrueSystemApp = isSystemApp && !isUpdatedSystemApp && !hasLauncherIcon;
+            // When "Toggle System" is OFF:
+            // - Show all apps WITH launcher icons (user apps + pre-installed apps)
+            // - Hide apps WITHOUT launcher icons (background services, system components)
+            // When "Toggle System" is ON:
+            // - Show everything
             
-            // Skip based on filter
-            if (!showSystemApps && isTrueSystemApp && !app.packageName.equals("com.invcolors")) {
-                continue;
+            if (!showSystemApps && !hasLauncherIcon && !app.packageName.equals("com.invcolors")) {
+                continue; // Skip background services/system components
             }
             
             String appName = app.loadLabel(packageManager).toString();
