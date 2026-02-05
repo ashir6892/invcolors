@@ -28,7 +28,6 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         
         prefs = getSharedPreferences("invcolors_settings", Context.MODE_PRIVATE);
-        hookedApps = prefs.getStringSet("hooked_apps", new HashSet<>());
 
         // Main layout
         LinearLayout mainLayout = new LinearLayout(this);

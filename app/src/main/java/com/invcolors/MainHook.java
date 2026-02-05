@@ -1,7 +1,6 @@
 package com.invcolors;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorMatrix;
@@ -16,9 +15,13 @@ import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
+import java.io.File;
+import java.io.FileOutputStream;
+
 public class MainHook implements IXposedHookLoadPackage {
 
     private static final String TAG = "InvColors";
+    private static final String HOOKED_APPS_DIR = "/data/data/com.invcolors/hooked_apps/";
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
@@ -32,8 +35,10 @@ public class MainHook implements IXposedHookLoadPackage {
         XposedBridge.log(TAG + ": ========================================");
         XposedBridge.log(TAG + ": Loading for package: " + lpparam.packageName);
         
-        // Use default white->black transformation for now
-        // (Custom colors will be loaded from the module's own SharedPreferences later)
+        // Register this app as hooked by creating a marker file
+        registerHookedApp(lpparam.packageName);
+        
+        // Use default white->black transformation
         int sourceColor = Color.WHITE;
         int targetColor = Color.BLACK;
         
@@ -66,6 +71,29 @@ public class MainHook implements IXposedHookLoadPackage {
         }
         
         XposedBridge.log(TAG + ": ========================================");
+    }
+
+    private void registerHookedApp(String packageName) {
+        try {
+            File dir = new File(HOOKED_APPS_DIR);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            
+            File markerFile = new File(dir, packageName);
+            if (!markerFile.exists()) {
+                markerFile.createNewFile();
+                XposedBridge.log(TAG + ": Registered hooked app: " + packageName);
+            }
+            
+            // Make file world-readable so module app can read it
+            markerFile.setReadable(true, false);
+            dir.setReadable(true, false);
+            dir.setExecutable(true, false);
+            
+        } catch (Throwable t) {
+            XposedBridge.log(TAG + ": Failed to register app: " + t.getMessage());
+        }
     }
 
     private static class ColorFilterHook extends XC_MethodHook {
