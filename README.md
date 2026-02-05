@@ -6,6 +6,7 @@ A lightweight LSPosed/Xposed module that forces dark mode on Android apps by inv
 
 - 🎨 **Native View Inversion** - Inverts colors in native Android views
 - 🌐 **WebView Support** - Injects dark mode CSS into WebView-based apps (Cordova, Capacitor, Ionic, etc.)
+- 📸 **Screenshot Bypass** - Removes FLAG_SECURE restriction to allow screenshots
 - ⚡ **Lightweight** - Minimal performance impact
 - 🔧 **No UI** - Simple module, just enable in LSPosed and select target apps
 - 📱 **Android 7.0+** Compatible (API 24+)

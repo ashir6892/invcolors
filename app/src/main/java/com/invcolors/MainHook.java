@@ -54,8 +54,56 @@ public class MainHook implements IXposedHookLoadPackage {
             // Hook WebView for Cordova/Capacitor apps
             hookWebView(lpparam);
             
+            // Bypass screenshot restrictions (FLAG_SECURE)
+            bypassScreenshotRestriction(lpparam);
+            
         } catch (Throwable t) {
             XposedBridge.log(TAG + ": Error: " + t.getMessage());
+        }
+    }
+    
+    private void bypassScreenshotRestriction(XC_LoadPackage.LoadPackageParam lpparam) {
+        try {
+            // Hook Window.setFlags to remove FLAG_SECURE
+            Class<?> windowClass = XposedHelpers.findClass("android.view.Window", lpparam.classLoader);
+            XposedHelpers.findAndHookMethod(windowClass, "setFlags", int.class, int.class, new XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                    int flags = (int) param.args[0];
+                    int mask = (int) param.args[1];
+                    
+                    // FLAG_SECURE = 0x00002000
+                    int FLAG_SECURE = 0x00002000;
+                    
+                    // Remove FLAG_SECURE from both flags and mask
+                    if ((flags & FLAG_SECURE) != 0) {
+                        param.args[0] = flags & ~FLAG_SECURE;
+                        XposedBridge.log(TAG + ": Removed FLAG_SECURE from setFlags");
+                    }
+                    if ((mask & FLAG_SECURE) != 0) {
+                        param.args[1] = mask & ~FLAG_SECURE;
+                    }
+                }
+            });
+            
+            // Also hook addFlags
+            XposedHelpers.findAndHookMethod(windowClass, "addFlags", int.class, new XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                    int flags = (int) param.args[0];
+                    int FLAG_SECURE = 0x00002000;
+                    
+                    if ((flags & FLAG_SECURE) != 0) {
+                        param.args[0] = flags & ~FLAG_SECURE;
+                        XposedBridge.log(TAG + ": Removed FLAG_SECURE from addFlags");
+                    }
+                }
+            });
+            
+            XposedBridge.log(TAG + ": Screenshot bypass hooks applied");
+            
+        } catch (Throwable t) {
+            XposedBridge.log(TAG + ": Screenshot bypass failed: " + t.getMessage());
         }
     }
 

@@ -43,11 +43,32 @@ jobs:
       with:
         name: InvColors-Release
         path: app/build/outputs/apk/release/*.apk
-        
+
+    - name: Get short SHA
+      id: slug
+      run: echo "sha8=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
+
+    - name: Delete old release
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: gh release delete latest --yes
+
     - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/')
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       uses: softprops/action-gh-release@v1
       with:
+        tag_name: latest
+        name: "Latest Build (${{ steps.slug.outputs.sha8 }})"
+        body: |
+          Automatic release from commit ${{ github.sha }}
+          
+          **Features:**
+          - Native View color inversion
+          - WebView/Cordova CSS injection
+          - Screenshot restriction bypass (FLAG_SECURE)
         files: app/build/outputs/apk/release/*.apk
+        prerelease: false
+        make_latest: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
