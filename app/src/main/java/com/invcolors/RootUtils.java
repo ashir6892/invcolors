@@ -128,22 +128,72 @@ public class RootUtils {
      */
     public static List<String> getLSPosedScopeApps() {
         List<String> scopeApps = new ArrayList<>();
+        StringBuilder debugLog = new StringBuilder();
+        debugLog.append("=== LSPosed Scope Detection ===\n");
         
-        // LSPosed stores scope in /data/adb/lspd/config/modules/
-        // The module's scope is stored as a file with package names
+        // Try to find LSPosed config directory first
+        String lspdDir = executeRoot("ls -la /data/adb/lspd/ 2>/dev/null");
+        debugLog.append("lspd dir: ").append(lspdDir.isEmpty() ? "NOT FOUND" : "EXISTS").append("\n");
         
-        // Try common LSPosed config paths
+        String modulesDir = executeRoot("ls -la /data/adb/modules/ 2>/dev/null | grep -i lsp");
+        debugLog.append("modules with lsp: ").append(modulesDir.isEmpty() ? "NONE" : modulesDir).append("\n");
+        
+        // Find all possible scope files
+        String findScope = executeRoot("find /data/adb -name '*scope*' -o -name '*invcolors*' 2>/dev/null | head -20");
+        debugLog.append("scope files found:\n").append(findScope.isEmpty() ? "NONE" : findScope).append("\n");
+        
+        // Try all known LSPosed config paths
         String[] possiblePaths = {
-            "/data/adb/lspd/config/modules/com.invcolors/scope.txt",
+            // LSPosed Zygisk paths
+            "/data/adb/lspd/config/modules/com.invcolors/scope.list",
+            "/data/adb/lspd/config/modules/com.invcolors/scope",
+            "/data/adb/lspd/config/com.invcolors/scope.list",
             "/data/adb/lspd/config/com.invcolors/scope",
-            "/data/adb/lspd/config/modules/com.invcolors",
+            "/data/adb/lspd/config/modules_config/com.invcolors/scope.list",
+            
+            // Zygisk LSPosed module paths
+            "/data/adb/modules/zygisk_lsposed/config/modules/com.invcolors/scope.list",
             "/data/adb/modules/zygisk_lsposed/config/com.invcolors/scope",
+            "/data/adb/modules/zygisk-lsposed/config/modules/com.invcolors/scope.list",
+            "/data/adb/modules/lsposed/config/modules/com.invcolors/scope.list",
+            
+            // Riru LSPosed paths
+            "/data/adb/riru/modules/lsposed/config/com.invcolors/scope.list",
+            "/data/adb/modules/riru_lsposed/config/com.invcolors/scope.list",
+            
+            // Direct app data paths
+            "/data/data/org.lsposed.manager/shared_prefs/scope_com.invcolors.xml",
+            "/data/user/0/org.lsposed.manager/shared_prefs/scope_com.invcolors.xml",
+            
+            // Old EdXposed paths
+            "/data/misc/edxposed/config/modules/com.invcolors/scope.list",
         };
         
         for (String path : possiblePaths) {
-            String result = executeRoot("cat " + path + " 2>/dev/null");
+            String result = executeRoot("cat '" + path + "' 2>/dev/null");
             if (!result.isEmpty()) {
+                debugLog.append("FOUND: ").append(path).append("\n");
                 for (String line : result.split("\n")) {
+                    String pkg = line.trim();
+                    if (!pkg.isEmpty() && pkg.contains(".") && !pkg.startsWith("#") && !scopeApps.contains(pkg)) {
+                        scopeApps.add(pkg);
+                    }
+                }
+            }
+        }
+        
+        // Try LSPosed database
+        String[] dbPaths = {
+            "/data/adb/lspd/config/modules_config.db",
+            "/data/adb/lspd/config/lspd.db", 
+            "/data/adb/modules/zygisk_lsposed/config/modules_config.db",
+        };
+        
+        for (String dbPath : dbPaths) {
+            String dbResult = executeRoot("sqlite3 '" + dbPath + "' \"SELECT app_pkg_name FROM scope WHERE module_pkg_name='com.invcolors'\" 2>/dev/null");
+            if (!dbResult.isEmpty()) {
+                debugLog.append("DB FOUND: ").append(dbPath).append("\n");
+                for (String line : dbResult.split("\n")) {
                     String pkg = line.trim();
                     if (!pkg.isEmpty() && pkg.contains(".") && !scopeApps.contains(pkg)) {
                         scopeApps.add(pkg);
@@ -152,19 +202,15 @@ public class RootUtils {
             }
         }
         
-        // Also try to find scope from LSPosed database
-        String dbResult = executeRoot("sqlite3 /data/adb/lspd/config/modules_config.db \"SELECT app_pkg_name FROM scope WHERE module_pkg_name='com.invcolors'\" 2>/dev/null");
-        if (!dbResult.isEmpty()) {
-            for (String line : dbResult.split("\n")) {
-                String pkg = line.trim();
-                if (!pkg.isEmpty() && pkg.contains(".") && !scopeApps.contains(pkg)) {
-                    scopeApps.add(pkg);
-                }
-            }
-        }
+        // Save debug log for viewing in LogActivity
+        debugLog.append("Total apps found: ").append(scopeApps.size()).append("\n");
+        lastDebugLog = debugLog.toString();
         
         return scopeApps;
     }
+    
+    // Store last debug log for viewing
+    public static String lastDebugLog = "";
 
     /**
      * Extract package name from directory name (removes version suffix)

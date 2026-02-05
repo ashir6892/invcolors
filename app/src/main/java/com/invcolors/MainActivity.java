@@ -162,12 +162,16 @@ public class MainActivity extends Activity {
                 if (finalApps.isEmpty()) {
                     TextView emptyView = new TextView(this);
                     emptyView.setText("No hooked apps found.\n\n" +
+                        "STEPS TO FIX:\n" +
                         "1. Open LSPosed Manager\n" +
-                        "2. Enable InvColors module\n" +
-                        "3. Select apps in module scope\n" +
-                        "4. Tap Refresh here");
+                        "2. Go to Modules tab\n" +
+                        "3. Tap on InvColors\n" +
+                        "4. Enable it and select target apps\n" +
+                        "5. Reboot device\n" +
+                        "6. Tap Refresh here\n\n" +
+                        "DEBUG INFO:\n" + RootUtils.lastDebugLog);
                     emptyView.setTextColor(0xFFAAAAAA);
-                    emptyView.setTextSize(14);
+                    emptyView.setTextSize(12);
                     emptyView.setPadding(10, 20, 10, 20);
                     appsListLayout.addView(emptyView);
                 } else {
