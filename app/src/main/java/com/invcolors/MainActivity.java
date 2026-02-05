@@ -276,17 +276,55 @@ public class MainActivity extends Activity {
 
         cardLayout.addView(infoColumn);
 
+        // Button container
+        LinearLayout buttonsColumn = new LinearLayout(this);
+        buttonsColumn.setOrientation(LinearLayout.VERTICAL);
+        
         // Colors button
         Button colorsButton = new Button(this);
-        colorsButton.setText("Colors");
-        colorsButton.setTextSize(11);
-        colorsButton.setPadding(15, 5, 15, 5);
+        colorsButton.setText("Set Colors");
+        colorsButton.setTextSize(10);
+        colorsButton.setPadding(12, 4, 12, 4);
         colorsButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, ColorSettingsActivity.class);
             intent.putExtra("package_name", appInfo.packageName);
             startActivity(intent);
         });
-        cardLayout.addView(colorsButton);
+        buttonsColumn.addView(colorsButton);
+
+        // Detect Colors button
+        Button detectButton = new Button(this);
+        detectButton.setText("Detect Colors");
+        detectButton.setTextSize(10);
+        detectButton.setPadding(12, 4, 12, 4);
+        LinearLayout.LayoutParams detectParams = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        detectParams.setMargins(0, 4, 0, 0);
+        detectButton.setLayoutParams(detectParams);
+        detectButton.setOnClickListener(v -> {
+            Toast.makeText(this, "Extracting colors from " + appInfo.name + "...", Toast.LENGTH_SHORT).show();
+            Executors.newSingleThreadExecutor().execute(() -> {
+                List<Integer> colors = RootUtils.extractColorsFromApk(appInfo.packageName);
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    if (colors.isEmpty()) {
+                        Toast.makeText(this, "No colors extracted", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Found " + colors.size() + " colors!", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(this, ColorSettingsActivity.class);
+                        intent.putExtra("package_name", appInfo.packageName);
+                        int[] colorArray = new int[colors.size()];
+                        for (int i = 0; i < colors.size(); i++) {
+                            colorArray[i] = colors.get(i);
+                        }
+                        intent.putExtra("detected_colors", colorArray);
+                        startActivity(intent);
+                    }
+                });
+            });
+        });
+        buttonsColumn.addView(detectButton);
+
+        cardLayout.addView(buttonsColumn);
 
         appsListLayout.addView(cardLayout);
     }
