@@ -13,11 +13,10 @@ import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
-import java.lang.reflect.Field;
-
 public class MainHook implements IXposedHookLoadPackage {
 
     private static final ColorMatrixColorFilter invertFilter = createInvertFilter();
+    private static final String TAG = "InvColors";
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
@@ -28,56 +27,55 @@ public class MainHook implements IXposedHookLoadPackage {
             return;
         }
 
-        XposedBridge.log("InvColors: Hooking package: " + lpparam.packageName);
+        XposedBridge.log(TAG + ": ========================================");
+        XposedBridge.log(TAG + ": Loading for package: " + lpparam.packageName);
+        XposedBridge.log(TAG + ": ========================================");
 
         try {
-            // Hook View's setLayerType to force software rendering with color filter
-            // This is similar to how Android's accessibility color inversion works
-            XposedHelpers.findAndHookMethod(
-                View.class,
-                "setLayerPaint",
-                Paint.class,
-                new XC_MethodHook() {
-                    @Override
-                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                        Paint paint = (Paint) param.args[0];
-                        if (paint == null) {
-                            paint = new Paint();
-                        }
-                        paint.setColorFilter(invertFilter);
-                        param.args[0] = paint;
-                    }
-                }
-            );
-
-            // Hook the root view to apply inversion at window level
+            // Hook ViewGroup.dispatchDraw() for root views
             XposedHelpers.findAndHookMethod(
                 ViewGroup.class,
                 "dispatchDraw",
                 Canvas.class,
                 new XC_MethodHook() {
                     private Paint mPaint = null;
+                    private int hookCount = 0;
 
                     @Override
                     protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                         try {
                             ViewGroup viewGroup = (ViewGroup) param.thisObject;
+                            Canvas canvas = (Canvas) param.args[0];
                             
-                            // Only apply to root views (DecorView)
-                            if (viewGroup.getParent() == null || viewGroup.getParent().toString().contains("ViewRootImpl")) {
-                                Canvas canvas = (Canvas) param.args[0];
-                                
+                            // Only log first few times to avoid spam
+                            if (hookCount < 5) {
+                                XposedBridge.log(TAG + ": dispatchDraw called on " + viewGroup.getClass().getSimpleName());
+                                hookCount++;
+                            }
+                            
+                            // Check if this is a root view
+                            boolean isRoot = viewGroup.getParent() == null || 
+                                           viewGroup.getClass().getName().contains("DecorView");
+                            
+                            if (isRoot) {
                                 if (mPaint == null) {
                                     mPaint = new Paint();
                                     mPaint.setColorFilter(invertFilter);
+                                    XposedBridge.log(TAG + ": Created inversion paint for root view");
                                 }
+                                
+                                XposedBridge.log(TAG + ": Applying color inversion to root view: " + 
+                                               viewGroup.getClass().getSimpleName());
                                 
                                 // Apply color inversion to entire window canvas
                                 canvas.saveLayer(0, 0, canvas.getWidth(), canvas.getHeight(), mPaint, 
                                     Canvas.ALL_SAVE_FLAG);
+                                
+                                XposedBridge.log(TAG + ": Successfully applied saveLayer with inversion filter");
                             }
                         } catch (Throwable t) {
-                            // Silently ignore errors to avoid spam
+                            XposedBridge.log(TAG + ": ERROR in beforeHookedMethod: " + t.getMessage());
+                            XposedBridge.log(t);
                         }
                     }
 
@@ -85,37 +83,49 @@ public class MainHook implements IXposedHookLoadPackage {
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                         try {
                             ViewGroup viewGroup = (ViewGroup) param.thisObject;
+                            boolean isRoot = viewGroup.getParent() == null || 
+                                           viewGroup.getClass().getName().contains("DecorView");
                             
-                            if (viewGroup.getParent() == null || viewGroup.getParent().toString().contains("ViewRootImpl")) {
+                            if (isRoot) {
                                 Canvas canvas = (Canvas) param.args[0];
                                 canvas.restore();
+                                XposedBridge.log(TAG + ": Restored canvas after inversion");
                             }
                         } catch (Throwable t) {
-                            // Silently ignore errors
+                            XposedBridge.log(TAG + ": ERROR in afterHookedMethod: " + t.getMessage());
                         }
                     }
                 }
             );
 
-            // Alternative approach: Hook Paint directly for all drawing operations
+            XposedBridge.log(TAG + ": Successfully hooked ViewGroup.dispatchDraw()");
+
+            // Hook View.draw() as fallback
             XposedHelpers.findAndHookMethod(
-                Paint.class,
-                "setColorFilter",
-                android.graphics.ColorFilter.class,
+                View.class,
+                "draw",
+                Canvas.class,
                 new XC_MethodHook() {
+                    private static int drawCount = 0;
+                    
                     @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        // If no color filter is set, apply our inversion filter
-                        Paint paint = (Paint) param.thisObject;
-                        if (param.args[0] == null) {
-                            XposedHelpers.callMethod(param.thisObject, "setColorFilter", invertFilter);
+                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        if (drawCount < 3) {
+                            View view = (View) param.thisObject;
+                            XposedBridge.log(TAG + ": View.draw() called on " + view.getClass().getSimpleName());
+                            drawCount++;
                         }
                     }
                 }
             );
+
+            XposedBridge.log(TAG + ": Successfully hooked View.draw() for monitoring");
+            XposedBridge.log(TAG + ": All hooks installed successfully!");
+            XposedBridge.log(TAG + ": ========================================");
 
         } catch (Throwable t) {
-            XposedBridge.log("InvColors: Error hooking package " + lpparam.packageName);
+            XposedBridge.log(TAG + ": CRITICAL ERROR hooking package " + lpparam.packageName);
+            XposedBridge.log(TAG + ": Error message: " + t.getMessage());
             XposedBridge.log(t);
         }
     }
@@ -126,12 +136,14 @@ public class MainHook implements IXposedHookLoadPackage {
      * Same matrix used by Android's accessibility color inversion
      */
     private static ColorMatrixColorFilter createInvertFilter() {
+        XposedBridge.log(TAG + ": Creating color inversion filter");
         ColorMatrix colorMatrix = new ColorMatrix(new float[] {
             -1f,  0f,  0f,  0f, 255f,  // Red channel inverted
              0f, -1f,  0f,  0f, 255f,  // Green channel inverted
              0f,  0f, -1f,  0f, 255f,  // Blue channel inverted
              0f,  0f,  0f,  1f,   0f   // Alpha channel unchanged
         });
+        XposedBridge.log(TAG + ": Color matrix created successfully");
         return new ColorMatrixColorFilter(colorMatrix);
     }
 }
