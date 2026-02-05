@@ -19,8 +19,8 @@ public class ColorSettingsActivity extends Activity {
     private int sourceColor = Color.WHITE; // Default: white
     private int targetColor = Color.BLACK; // Default: black
     
-    private View sourceColorPreview;
-    private View targetColorPreview;
+    private android.view.View sourceColorPreview;
+    private android.view.View targetColorPreview;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
