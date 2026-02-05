@@ -15,47 +15,79 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 public class MainHook implements IXposedHookLoadPackage {
 
     private static final ColorMatrixColorFilter invertFilter = createInvertFilter();
+    private static Paint filterPaint = null;
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
         // Skip system apps and the module itself to avoid issues
-        if (lpparam.packageName.equals("com.invcolors") ||
-                lpparam.packageName.equals("android") ||
-                lpparam.packageName.equals("com.android.systemui")) {
+        if (lpparam.packageName.equals("com.invcolors") || 
+            lpparam.packageName.equals("android") ||
+            lpparam.packageName.equals("com.android.systemui")) {
             return;
         }
 
         XposedBridge.log("InvColors: Hooking package: " + lpparam.packageName);
 
         try {
-            // Hook View.draw() to apply color inversion
+            // Hook View.onDraw() to apply color inversion
             XposedHelpers.findAndHookMethod(
-                    View.class,
-                    "draw",
-                    Canvas.class,
-                    new XC_MethodHook() {
-                        @Override
-                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                            Canvas canvas = (Canvas) param.args[0];
-
-                            // Save canvas state
-                            canvas.save();
-
-                            // Apply color inversion filter
-                            Paint paint = new Paint();
-                            paint.setColorFilter(invertFilter);
-                            canvas.saveLayer(null, paint);
+                View.class,
+                "onDraw",
+                Canvas.class,
+                new XC_MethodHook() {
+                    @Override
+                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        Canvas canvas = (Canvas) param.args[0];
+                        
+                        if (filterPaint == null) {
+                            filterPaint = new Paint();
+                            filterPaint.setColorFilter(invertFilter);
                         }
+                        
+                        // Save canvas and apply color filter
+                        canvas.save();
+                        canvas.saveLayer(null, filterPaint, Canvas.ALL_SAVE_FLAG);
+                    }
 
-                        @Override
-                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                            Canvas canvas = (Canvas) param.args[0];
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                        Canvas canvas = (Canvas) param.args[0];
+                        
+                        // Restore canvas state
+                        canvas.restore();
+                        canvas.restore();
+                    }
+                }
+            );
 
-                            // Restore canvas state (removes the color filter)
-                            canvas.restore();
-                            canvas.restore();
+            // Also hook dispatchDraw for ViewGroups to ensure child views are inverted
+            XposedHelpers.findAndHookMethod(
+                View.class,
+                "dispatchDraw",
+                Canvas.class,
+                new XC_MethodHook() {
+                    @Override
+                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        Canvas canvas = (Canvas) param.args[0];
+                        
+                        if (filterPaint == null) {
+                            filterPaint = new Paint();
+                            filterPaint.setColorFilter(invertFilter);
                         }
-                    });
+                        
+                        canvas.save();
+                        canvas.saveLayer(null, filterPaint, Canvas.ALL_SAVE_FLAG);
+                    }
+
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                        Canvas canvas = (Canvas) param.args[0];
+                        
+                        canvas.restore();
+                        canvas.restore();
+                    }
+                }
+            );
 
         } catch (Throwable t) {
             XposedBridge.log("InvColors: Error hooking package " + lpparam.packageName);
@@ -69,10 +101,10 @@ public class MainHook implements IXposedHookLoadPackage {
      */
     private static ColorMatrixColorFilter createInvertFilter() {
         ColorMatrix colorMatrix = new ColorMatrix(new float[] {
-                -1f, 0f, 0f, 0f, 255f, // Red channel inverted
-                0f, -1f, 0f, 0f, 255f, // Green channel inverted
-                0f, 0f, -1f, 0f, 255f, // Blue channel inverted
-                0f, 0f, 0f, 1f, 0f // Alpha channel unchanged
+            -1f,  0f,  0f,  0f, 255f,  // Red channel inverted
+             0f, -1f,  0f,  0f, 255f,  // Green channel inverted
+             0f,  0f, -1f,  0f, 255f,  // Blue channel inverted
+             0f,  0f,  0f,  1f,   0f   // Alpha channel unchanged
         });
         return new ColorMatrixColorFilter(colorMatrix);
     }
