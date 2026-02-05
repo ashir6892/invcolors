@@ -106,7 +106,7 @@ public class MainHook implements IXposedHookLoadPackage {
                 "draw",
                 Canvas.class,
                 new XC_MethodHook() {
-                    private static int drawCount = 0;
+                    private int drawCount = 0;
                     
                     @Override
                     protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
