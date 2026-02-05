@@ -8,10 +8,13 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,13 +25,16 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends Activity {
 
     private SharedPreferences prefs;
     private LinearLayout appsListLayout;
     private PackageManager packageManager;
-    private boolean showSystemApps = false;
+    private TextView statusView;
+    private ProgressBar progressBar;
+    private boolean useRoot = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,23 +54,32 @@ public class MainActivity extends Activity {
         titleView.setText("InvColors - Custom Color Mapping");
         titleView.setTextSize(22);
         titleView.setTextColor(0xFFFFFFFF);
-        titleView.setPadding(0, 0, 0, 30);
+        titleView.setPadding(0, 0, 0, 20);
         mainLayout.addView(titleView);
 
-        // Info text
-        TextView infoView = new TextView(this);
-        infoView.setText("All installed apps - configure colors for any app");
-        infoView.setTextSize(14);
-        infoView.setTextColor(0xFFAAAAAA);
-        infoView.setPadding(0, 0, 0, 20);
-        mainLayout.addView(infoView);
+        // Status text
+        statusView = new TextView(this);
+        statusView.setText("Checking root access...");
+        statusView.setTextSize(14);
+        statusView.setTextColor(0xFFAAAAAA);
+        statusView.setPadding(0, 0, 0, 10);
+        mainLayout.addView(statusView);
+
+        // Progress bar
+        progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        progressBar.setIndeterminate(true);
+        LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 10);
+        progressParams.setMargins(0, 0, 0, 20);
+        progressBar.setLayoutParams(progressParams);
+        mainLayout.addView(progressBar);
 
         // Buttons row
         LinearLayout buttonsLayout = new LinearLayout(this);
         buttonsLayout.setOrientation(LinearLayout.HORIZONTAL);
         
         Button logsButton = new Button(this);
-        logsButton.setText("View Logs");
+        logsButton.setText("Logs");
         logsButton.setOnClickListener(v -> {
             startActivity(new Intent(this, LogActivity.class));
         });
@@ -74,19 +89,11 @@ public class MainActivity extends Activity {
         logsButton.setLayoutParams(buttonParams);
         buttonsLayout.addView(logsButton);
 
-        Button toggleButton = new Button(this);
-        toggleButton.setText("Show All");
-        toggleButton.setOnClickListener(v -> {
-            showSystemApps = !showSystemApps;
-            loadAllApps();
-            Toast.makeText(this, showSystemApps ? "Showing all (including services)" : "Showing apps with icons only", 
-                         Toast.LENGTH_SHORT).show();
-        });
-        LinearLayout.LayoutParams toggleParams = new LinearLayout.LayoutParams(
-            0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
-        toggleParams.setMargins(5, 0, 0, 0);
-        toggleButton.setLayoutParams(toggleParams);
-        buttonsLayout.addView(toggleButton);
+        Button refreshButton = new Button(this);
+        refreshButton.setText("Refresh");
+        refreshButton.setOnClickListener(v -> loadAppsAsync());
+        refreshButton.setLayoutParams(buttonParams);
+        buttonsLayout.addView(refreshButton);
 
         mainLayout.addView(buttonsLayout);
 
@@ -98,14 +105,6 @@ public class MainActivity extends Activity {
         dividerParams.setMargins(0, 20, 0, 20);
         divider.setLayoutParams(dividerParams);
         mainLayout.addView(divider);
-
-        // Apps list title
-        TextView appsTitle = new TextView(this);
-        appsTitle.setText("Installed Apps:");
-        appsTitle.setTextSize(18);
-        appsTitle.setTextColor(0xFFFFFFFF);
-        appsTitle.setPadding(0, 0, 0, 10);
-        mainLayout.addView(appsTitle);
 
         // Scroll view for apps
         ScrollView scrollView = new ScrollView(this);
@@ -119,114 +118,212 @@ public class MainActivity extends Activity {
         mainLayout.addView(scrollView);
 
         setContentView(mainLayout);
-        loadAllApps();
+        loadAppsAsync();
     }
 
-    private void loadAllApps() {
+    private void loadAppsAsync() {
+        progressBar.setVisibility(View.VISIBLE);
+        statusView.setText("Loading apps...");
         appsListLayout.removeAllViews();
-        
-        // Get hooked apps
-        Set<String> hookedApps = new HashSet<>();
-        File hookedAppsDir = new File("/data/data/com.invcolors/hooked_apps/");
-        if (hookedAppsDir.exists() && hookedAppsDir.isDirectory()) {
-            File[] files = hookedAppsDir.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    hookedApps.add(file.getName());
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            boolean rootAvailable = RootUtils.isRootAvailable();
+            List<AppInfo> apps = new ArrayList<>();
+            Set<String> lsposedApps = new HashSet<>();
+            
+            if (rootAvailable) {
+                // Get LSPosed scope apps
+                lsposedApps.addAll(RootUtils.getLSPosedScopeApps());
+                
+                // Get installed apps using root
+                List<RootUtils.AppData> rootApps = RootUtils.getInstalledAppsWithRoot();
+                for (RootUtils.AppData app : rootApps) {
+                    boolean isInScope = lsposedApps.contains(app.packageName);
+                    apps.add(new AppInfo(app.packageName, app.appName, isInScope));
                 }
             }
-        }
-
-        // Get all installed apps
-        List<ApplicationInfo> apps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA);
-        List<AppInfo> appList = new ArrayList<>();
-        
-        for (ApplicationInfo app : apps) {
-            // Check if app has a launcher icon (user-visible apps)
-            Intent launchIntent = packageManager.getLaunchIntentForPackage(app.packageName);
-            boolean hasLauncherIcon = launchIntent != null;
             
-            // When "Toggle System" is OFF:
-            // - Show all apps WITH launcher icons (user apps + pre-installed apps)
-            // - Hide apps WITHOUT launcher icons (background services, system components)
-            // When "Toggle System" is ON:
-            // - Show everything
-            
-            if (!showSystemApps && !hasLauncherIcon && !app.packageName.equals("com.invcolors")) {
-                continue; // Skip background services/system components
+            // Also try PackageManager as fallback
+            if (apps.size() < 10) {
+                try {
+                    List<ApplicationInfo> pmApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA);
+                    for (ApplicationInfo app : pmApps) {
+                        Intent launchIntent = packageManager.getLaunchIntentForPackage(app.packageName);
+                        if (launchIntent != null) {
+                            String appName = app.loadLabel(packageManager).toString();
+                            boolean isInScope = lsposedApps.contains(app.packageName);
+                            
+                            // Check if already added
+                            boolean exists = false;
+                            for (AppInfo existing : apps) {
+                                if (existing.packageName.equals(app.packageName)) {
+                                    exists = true;
+                                    // Update name if we have a better one
+                                    if (!appName.equals(app.packageName)) {
+                                        existing.name = appName;
+                                    }
+                                    break;
+                                }
+                            }
+                            if (!exists) {
+                                apps.add(new AppInfo(app.packageName, appName, isInScope));
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // PackageManager failed, rely on root results
+                }
             }
             
-            String appName = app.loadLabel(packageManager).toString();
-            boolean isHooked = hookedApps.contains(app.packageName);
-            appList.add(new AppInfo(app.packageName, appName, isHooked));
-        }
-        
-        // Sort alphabetically
-        Collections.sort(appList, (a, b) -> a.name.compareToIgnoreCase(b.name));
-        
-        // Display apps
-        for (AppInfo appInfo : appList) {
-            addAppCard(appInfo);
-        }
-        
-        // Show count
-        TextView countView = new TextView(this);
-        countView.setText("Total: " + appList.size() + " apps");
-        countView.setTextColor(0xFF888888);
-        countView.setTextSize(12);
-        countView.setPadding(10, 20, 10, 10);
-        appsListLayout.addView(countView);
+            // Try to resolve app names for root-found apps
+            for (AppInfo app : apps) {
+                if (app.name.equals(app.packageName)) {
+                    try {
+                        ApplicationInfo appInfo = packageManager.getApplicationInfo(app.packageName, 0);
+                        app.name = appInfo.loadLabel(packageManager).toString();
+                    } catch (Exception e) {
+                        // Keep package name as name
+                    }
+                }
+            }
+            
+            // Sort alphabetically
+            Collections.sort(apps, (a, b) -> a.name.compareToIgnoreCase(b.name));
+            
+            final List<AppInfo> finalApps = apps;
+            final boolean finalRootAvailable = rootAvailable;
+            final int scopeCount = lsposedApps.size();
+            
+            new Handler(Looper.getMainLooper()).post(() -> {
+                progressBar.setVisibility(View.GONE);
+                
+                String status = finalRootAvailable ? "✓ Root available" : "✗ No root";
+                status += " | " + finalApps.size() + " apps";
+                if (scopeCount > 0) {
+                    status += " | " + scopeCount + " in LSPosed scope";
+                }
+                statusView.setText(status);
+                
+                if (finalApps.isEmpty()) {
+                    TextView emptyView = new TextView(this);
+                    emptyView.setText("No apps found.\n\nGrant root access in KernelSU\nand tap Refresh.");
+                    emptyView.setTextColor(0xFFAAAAAA);
+                    emptyView.setTextSize(14);
+                    emptyView.setPadding(10, 20, 10, 20);
+                    appsListLayout.addView(emptyView);
+                } else {
+                    for (AppInfo appInfo : finalApps) {
+                        addAppCard(appInfo);
+                    }
+                }
+            });
+        });
     }
 
     private void addAppCard(AppInfo appInfo) {
         LinearLayout cardLayout = new LinearLayout(this);
         cardLayout.setOrientation(LinearLayout.VERTICAL);
-        cardLayout.setBackgroundColor(appInfo.isHooked ? 0xFF2D4D2D : 0xFF2D2D2D);
-        cardLayout.setPadding(15, 15, 15, 15);
+        // Green if in LSPosed scope, gray otherwise
+        cardLayout.setBackgroundColor(appInfo.isInScope ? 0xFF2D4D2D : 0xFF2D2D2D);
+        cardLayout.setPadding(15, 12, 15, 12);
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT);
-        cardParams.setMargins(0, 0, 0, 10);
+        cardParams.setMargins(0, 0, 0, 8);
         cardLayout.setLayoutParams(cardParams);
 
-        // App name
+        // App name row
+        LinearLayout nameRow = new LinearLayout(this);
+        nameRow.setOrientation(LinearLayout.HORIZONTAL);
+        
         TextView nameView = new TextView(this);
-        nameView.setText(appInfo.name + (appInfo.isHooked ? " ✓" : ""));
+        nameView.setText(appInfo.name);
         nameView.setTextColor(0xFFFFFFFF);
-        nameView.setTextSize(16);
-        nameView.setPadding(0, 0, 0, 5);
-        cardLayout.addView(nameView);
+        nameView.setTextSize(15);
+        nameView.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+        nameRow.addView(nameView);
+        
+        if (appInfo.isInScope) {
+            TextView scopeBadge = new TextView(this);
+            scopeBadge.setText(" LSP ✓");
+            scopeBadge.setTextColor(0xFF88FF88);
+            scopeBadge.setTextSize(12);
+            nameRow.addView(scopeBadge);
+        }
+        
+        cardLayout.addView(nameRow);
 
         // Package name
         TextView packageView = new TextView(this);
         packageView.setText(appInfo.packageName);
-        packageView.setTextColor(0xFFAAAAAA);
-        packageView.setTextSize(12);
-        packageView.setPadding(0, 0, 0, 10);
+        packageView.setTextColor(0xFF888888);
+        packageView.setTextSize(11);
+        packageView.setPadding(0, 2, 0, 8);
         cardLayout.addView(packageView);
 
-        // Settings button
-        Button settingsButton = new Button(this);
-        settingsButton.setText("Configure Colors");
-        settingsButton.setOnClickListener(v -> {
+        // Buttons row
+        LinearLayout buttonsRow = new LinearLayout(this);
+        buttonsRow.setOrientation(LinearLayout.HORIZONTAL);
+
+        // Configure colors button
+        Button configButton = new Button(this);
+        configButton.setText("Colors");
+        configButton.setTextSize(12);
+        configButton.setPadding(10, 5, 10, 5);
+        LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(
+            0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+        btnParams.setMargins(0, 0, 5, 0);
+        configButton.setLayoutParams(btnParams);
+        configButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, ColorSettingsActivity.class);
             intent.putExtra("package_name", appInfo.packageName);
             startActivity(intent);
         });
-        cardLayout.addView(settingsButton);
+        buttonsRow.addView(configButton);
 
+        // Extract colors button
+        Button extractButton = new Button(this);
+        extractButton.setText("Detect");
+        extractButton.setTextSize(12);
+        extractButton.setPadding(10, 5, 10, 5);
+        extractButton.setLayoutParams(btnParams);
+        extractButton.setOnClickListener(v -> {
+            Toast.makeText(this, "Extracting colors from " + appInfo.name + "...", Toast.LENGTH_SHORT).show();
+            Executors.newSingleThreadExecutor().execute(() -> {
+                List<Integer> colors = RootUtils.extractColorsFromApk(appInfo.packageName);
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    if (colors.isEmpty()) {
+                        Toast.makeText(this, "No colors found (aapt may not be available)", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Found " + colors.size() + " colors!", Toast.LENGTH_SHORT).show();
+                        // Open color settings with detected colors
+                        Intent intent = new Intent(this, ColorSettingsActivity.class);
+                        intent.putExtra("package_name", appInfo.packageName);
+                        int[] colorArray = new int[colors.size()];
+                        for (int i = 0; i < colors.size(); i++) {
+                            colorArray[i] = colors.get(i);
+                        }
+                        intent.putExtra("detected_colors", colorArray);
+                        startActivity(intent);
+                    }
+                });
+            });
+        });
+        buttonsRow.addView(extractButton);
+
+        cardLayout.addView(buttonsRow);
         appsListLayout.addView(cardLayout);
     }
 
     private static class AppInfo {
         String packageName;
         String name;
-        boolean isHooked;
+        boolean isInScope;
 
-        AppInfo(String packageName, String name, boolean isHooked) {
+        AppInfo(String packageName, String name, boolean isInScope) {
             this.packageName = packageName;
             this.name = name;
-            this.isHooked = isHooked;
+            this.isInScope = isInScope;
         }
     }
 }
