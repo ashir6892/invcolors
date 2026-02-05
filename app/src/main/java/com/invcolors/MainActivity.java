@@ -142,9 +142,22 @@ public class MainActivity extends Activity {
         List<AppInfo> appList = new ArrayList<>();
         
         for (ApplicationInfo app : apps) {
-            // Filter system apps if needed
+            // Better system app detection:
+            // - True system apps: not updated, no launcher icon
+            // - User apps: either not system, or system but updated (like pre-installed Google apps)
             boolean isSystemApp = (app.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
-            if (!showSystemApps && isSystemApp && !app.packageName.equals("com.invcolors")) {
+            boolean isUpdatedSystemApp = (app.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
+            
+            // Check if app has launcher intent (user-facing apps)
+            Intent launchIntent = packageManager.getLaunchIntentForPackage(app.packageName);
+            boolean hasLauncherIcon = launchIntent != null;
+            
+            // Consider it a "true system app" only if:
+            // - It's a system app AND not updated AND has no launcher icon
+            boolean isTrueSystemApp = isSystemApp && !isUpdatedSystemApp && !hasLauncherIcon;
+            
+            // Skip based on filter
+            if (!showSystemApps && isTrueSystemApp && !app.packageName.equals("com.invcolors")) {
                 continue;
             }
             
