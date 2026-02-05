@@ -5,9 +5,9 @@
         android:label="@string/app_name"
         android:allowBackup="false">
         
-        <!-- Main Log Viewer Activity -->
+        <!-- Main Activity with App List and Settings -->
         <activity
-            android:name=".LogActivity"
+            android:name=".MainActivity"
             android:label="@string/app_name"
             android:exported="true">
             <intent-filter>
@@ -15,6 +15,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <!-- Color Settings Activity -->
+        <activity
+            android:name=".ColorSettingsActivity"
+            android:label="Color Settings"
+            android:exported="false" />
+        
+        <!-- Log Viewer Activity -->
+        <activity
+            android:name=".LogActivity"
+            android:label="Logs"
+            android:exported="false" />
         
         <!-- Xposed Module Metadata -->
         <meta-data
